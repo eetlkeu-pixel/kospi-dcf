@@ -1,0 +1,832 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>코스피 사이클 DCF</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: 계산기 한 장. 상단 결과 띠 → 내러티브 분포 차트 → 입력/역산 → 내러티브 표 → 민감도 → 지표 → 설정 JSON */
+:root {
+  --bg: #f3f5f8;
+  --surface: #ffffff;
+  --surface-2: #eef1f5;
+  --ink: #121822;
+  --ink-2: #4a5566;
+  --muted: #7d8899;
+  --line: #dde2ea;
+  --accent: #1d6b58;
+  --accent-soft: #dcefe9;
+  --up: #d63b3b;      /* 한국 시장 관례: 상승 = 빨강 */
+  --down: #2a6fd6;    /* 하락 = 파랑 */
+  --mid: #9aa3b0;
+  --warn: #a96a00;
+  --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --font-num: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1218; --surface: #161b23; --surface-2: #1d232d; --ink: #e7ebf1; --ink-2: #aeb7c4;
+    --muted: #727d8e; --line: #2a3240; --accent: #4cb597; --accent-soft: #17352d;
+    --up: #ef6464; --down: #5b93f0; --mid: #5d6674; --warn: #e0a440; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1218; --surface: #161b23; --surface-2: #1d232d; --ink: #e7ebf1; --ink-2: #aeb7c4;
+  --muted: #727d8e; --line: #2a3240; --accent: #4cb597; --accent-soft: #17352d;
+  --up: #ef6464; --down: #5b93f0; --mid: #5d6674; --warn: #e0a440; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 14px; line-height: 1.55;
+}
+.wrap {
+  max-width: 1180px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 64px;
+  display: grid; gap: 28px;
+}
+h1, h2, h3 { margin: 0; text-wrap: balance; line-height: 1.25; }
+h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.01em; }
+h2 { font-size: 17px; font-weight: 700; }
+h3 { font-size: 14px; font-weight: 600; }
+p { margin: 0; }
+.num, input[type="number"], td.n, th.n { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+.eyebrow { font-size: 11.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.sub { color: var(--ink-2); max-width: 70ch; }
+.small { font-size: 12.5px; color: var(--muted); }
+.up { color: var(--up); } .down { color: var(--down); }
+
+header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; }
+header.top .meta { display: grid; gap: 6px; }
+.formula {
+  font-family: var(--font-num); font-size: 12.5px; color: var(--ink-2);
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
+  padding: 8px 12px; line-height: 1.7;
+}
+
+/* 결과 띠 */
+.tiles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
+.tile { background: var(--surface); padding: 14px 16px; display: grid; gap: 4px; min-width: 0; }
+.tile .k { font-size: 12px; color: var(--muted); font-weight: 500; }
+.tile .v { font-family: var(--font-num); font-size: 24px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.tile .v small { font-size: 13px; font-weight: 500; color: var(--ink-2); margin-left: 2px; }
+.tile .d { font-family: var(--font-num); font-size: 12.5px; }
+.tile.hl { background: var(--accent-soft); }
+.tile.hl .v { color: var(--accent); }
+.notes { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 12.5px; color: var(--ink-2); margin-top: 10px; }
+.notes b { font-family: var(--font-num); font-weight: 600; color: var(--ink); }
+
+section.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 18px 18px 20px; display: grid; gap: 14px; min-width: 0; }
+.card-h { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; }
+.grid2 { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); gap: 28px; align-items: start; }
+.stack { display: grid; gap: 28px; min-width: 0; }
+
+/* 입력 */
+.fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px 14px; }
+.field { display: grid; gap: 4px; min-width: 0; }
+.field label { font-size: 12px; color: var(--ink-2); font-weight: 500; }
+.field .hint { font-size: 11.5px; color: var(--muted); }
+input[type="number"], input[type="text"], select {
+  width: 100%; min-width: 0; font-size: 13.5px; color: var(--ink); background: var(--surface-2);
+  border: 1px solid var(--line); border-radius: 7px; padding: 6px 8px; font-family: inherit;
+}
+input[type="number"] { font-family: var(--font-num); text-align: right; }
+input:focus-visible, select:focus-visible, button:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.epath { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.epath .field label { font-family: var(--font-num); }
+.epath .field.off input { opacity: 0.45; }
+
+button {
+  font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; border-radius: 7px; padding: 7px 12px;
+  border: 1px solid var(--line); background: var(--surface-2); color: var(--ink);
+}
+button:hover { border-color: var(--muted); }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+button.ghost { background: transparent; }
+button.x { padding: 4px 8px; font-size: 12px; color: var(--muted); background: transparent; }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+/* 표 */
+.scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+table { border-collapse: collapse; width: 100%; }
+th, td { padding: 7px 8px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: middle; white-space: nowrap; }
+th { font-size: 11.5px; color: var(--muted); font-weight: 600; letter-spacing: 0.02em; }
+td.n, th.n { text-align: right; }
+tbody tr:last-child td { border-bottom: 0; }
+table.kv td:first-child { color: var(--ink-2); }
+table.kv td.n { font-weight: 500; }
+table.kv tr.total td { font-weight: 700; border-top: 1px solid var(--ink-2); }
+table.narr input[type="number"] { width: 62px; padding: 4px 6px; font-size: 12.5px; }
+table.narr input[type="text"] { width: 190px; padding: 4px 6px; font-size: 12.5px; }
+table.narr td.out { font-family: var(--font-num); text-align: right; font-weight: 500; }
+table.narr th.grp { text-align: center; border-bottom: 1px solid var(--line); color: var(--ink-2); }
+table.narr .sep { border-left: 1px solid var(--line); }
+.psum { font-family: var(--font-num); font-size: 12.5px; }
+.psum.bad { color: var(--warn); font-weight: 600; }
+
+/* 히트맵 */
+table.heat td.n { font-size: 12.5px; padding: 8px 6px; }
+table.heat th.n, table.heat td.rh { font-family: var(--font-num); }
+table.heat td.cell { text-align: right; font-family: var(--font-num); font-variant-numeric: tabular-nums; border: 2px solid var(--surface); border-radius: 4px; }
+table.heat td.cell.base { outline: 2px solid var(--ink); outline-offset: -3px; }
+
+/* 지표 */
+.pill { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink-2); }
+.pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--mid); }
+.pill.on-up { color: var(--up); border-color: color-mix(in oklab, var(--up) 40%, var(--line)); }
+.pill.on-up::before { background: var(--up); }
+.pill.on-down { color: var(--down); border-color: color-mix(in oklab, var(--down) 40%, var(--line)); }
+.pill.on-down::before { background: var(--down); }
+.pill.need { color: var(--warn); }
+.pill.need::before { background: var(--warn); }
+table.ind input[type="number"] { width: 84px; padding: 4px 6px; font-size: 12.5px; }
+table.ind select { width: auto; padding: 4px 6px; font-size: 12.5px; }
+.balance { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 13px; }
+
+/* 차트 */
+.chart-box { overflow-x: auto; }
+.chart-box svg { display: block; width: 100%; min-width: 660px; height: auto; }
+.chart-box text { font-family: var(--font-body); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 12px; color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { display: inline-block; width: 14px; height: 0; border-top: 2px solid var(--ink); }
+.sw.dash { border-top-style: dashed; border-color: var(--muted); }
+.sw.acc { border-color: var(--accent); border-top-width: 3px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.ring { width: 10px; height: 10px; border-radius: 50%; display: inline-block; border: 2px solid var(--ink-2); }
+#tip {
+  position: fixed; pointer-events: none; z-index: 20; background: var(--ink); color: var(--bg);
+  font-size: 12px; line-height: 1.5; padding: 8px 10px; border-radius: 7px; max-width: 280px; box-shadow: 0 4px 16px rgb(0 0 0 / 0.18);
+}
+#tip b { font-family: var(--font-num); }
+
+textarea { width: 100%; min-height: 260px; font-family: var(--font-num); font-size: 12px; line-height: 1.5; color: var(--ink); background: var(--surface-2); border: 1px solid var(--line); border-radius: 7px; padding: 10px; resize: vertical; }
+.status { font-size: 12.5px; color: var(--accent); min-height: 1.2em; }
+.status.err { color: var(--up); }
+
+details.method summary { cursor: pointer; font-weight: 600; }
+details.method pre { font-family: var(--font-num); font-size: 12.5px; background: var(--surface-2); border-radius: 7px; padding: 12px; overflow-x: auto; line-height: 1.6; }
+.method-body { display: grid; gap: 12px; color: var(--ink-2); max-width: 80ch; padding-top: 10px; }
+.method-body ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+footer { font-size: 12px; color: var(--muted); display: grid; gap: 6px; }
+footer a { color: var(--ink-2); }
+
+@media (max-width: 980px) {
+  .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tiles .tile:first-child { grid-column: 1 / -1; }
+  .grid2 { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 520px) {
+  h1 { font-size: 22px; }
+  .tile .v { font-size: 20px; }
+  .epath { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .chart-box circle, .chart-box line.bar { transition: cx 0.25s ease, x2 0.25s ease; }
+}
+</style>
+</head>
+<body>
+
+<!--
+  설정 데이터 블록. 내러티브를 바꿀 때는 이 JSON만 고치면 된다.
+  E: 2027~2031 순이익 경로(조원). N: 업사이클 연수. semi/oth: 반도체·비반도체 정상 이익. r = (ktb + erp)/100.
+  내러티브 Δ: dE27/dE28/dE29(%, 2029년 이후 공통), dN(년), dSemi/dOth(조원), dPer(배), dR(%p).
+-->
+<script type="application/json" id="config">
+{
+  "asOf": "2026-11-18",
+  "market": { "index": 5290.53, "refIndex": 7763.95, "refCap": 6254.953 },
+  "base": { "E": [1125, 1100, 1050, 1000, 950], "N": 3, "semi": 100, "oth": 300, "per": 10, "ktb": 4.00, "erp": 6.00 },
+  "reflex": { "phi": 0.05, "psi": 0.10, "kappa": 25 },
+  "narratives": [
+    { "name": "공급 부족 2030년까지 연장", "p": 10, "dE27": 0, "dE28": 14, "dE29": 14, "dN": 1, "dSemi": 50, "dOth": 30, "dPer": 1, "dR": 0 },
+    { "name": "낙관: AI 수요 지속", "p": 15, "dE27": 0, "dE28": 13.6, "dE29": 14.3, "dN": 0, "dSemi": 50, "dOth": 30, "dPer": 1, "dR": 0 },
+    { "name": "베이스: 현 전제 유지", "p": 30, "dE27": 0, "dE28": 0, "dE29": 0, "dN": 0, "dSemi": 0, "dOth": 0, "dPer": 0, "dR": 0 },
+    { "name": "2028 반도체 컨센 −20% 하향", "p": 15, "dE27": 0, "dE28": -20, "dE29": -25, "dN": -1, "dSemi": -20, "dOth": 0, "dPer": 0, "dR": 0 },
+    { "name": "금리 상승: 국고 10년 4.5%", "p": 10, "dE27": 0, "dE28": 0, "dE29": 0, "dN": 0, "dSemi": 0, "dOth": -10, "dPer": -1, "dR": 0.5 },
+    { "name": "비관: 2028 하반기 사이클 종료", "p": 20, "dE27": -11.1, "dE28": -36.4, "dE29": -57.1, "dN": 0, "dSemi": -50, "dOth": -80, "dPer": -1, "dR": 0 }
+  ],
+  "indicators": [
+    { "name": "2028 반도체 투톱 영업이익 컨센 증가율 (%)", "value": 0.7, "op": "<", "th": -20, "dir": "down", "note": "943 ÷ 936조, 에프앤가이드 8월" },
+    { "name": "비반도체 2027 이익 증가율 (%)", "value": 11, "op": "<=", "th": 0, "dir": "down", "note": "반증 신호 ②" },
+    { "name": "하이퍼스케일러 2028 CAPEX 증가율 (%)", "value": null, "op": "<", "th": 0, "dir": "down", "note": "반증 신호 ③" },
+    { "name": "반도체 초과이익 유효기간 (년)", "value": 1.4, "op": "<", "th": 2, "dir": "up", "note": "짧을수록 비관이 가격에 반영됨 (데일리안)" },
+    { "name": "국고채 10년 (%)", "value": 4.00, "op": ">=", "th": 4.5, "dir": "down", "note": "할인율 상승. 금리 계산기 상방 극단 4.50" },
+    { "name": "코스피 보통주 배당 증가율 2027 (%)", "value": 9.3, "op": "<", "th": 5, "dir": "down", "note": "주주환원 약화 (메리츠)" },
+    { "name": "외국인 코스피 월간 순매수 (조원)", "value": null, "op": "<", "th": 0, "dir": "down", "note": "수급 반사성" },
+    { "name": "현재 시총 − 베이스 모델 괴리 (%)", "value": null, "auto": "gap", "op": "<", "th": -20, "dir": "up", "note": "자동 계산" }
+  ]
+}
+</script>
+
+<div class="wrap">
+
+  <header class="top">
+    <div class="meta">
+      <span class="eyebrow">KOSPI · 사이클 분리 DCF · <span id="asof"></span></span>
+      <h1>코스피 사이클 DCF</h1>
+      <p class="sub">업사이클 이익과 정상 이익을 나눠 할인하고, 내러티브별 변화(Δ)에 반사성 승수를 곱해 적정 시가총액의 범위를 추정합니다.</p>
+    </div>
+    <div class="formula">
+      PV = Σ E<sub>t</sub>/(1+r)<sup>t</sup> + NE·PER/(1+r)<sup>N</sup><br>
+      적정 = 베이스 + m·Δ · 극단 = 베이스 + m·Δ·(1+κ)
+    </div>
+  </header>
+
+  <!-- 결과 띠 -->
+  <div>
+    <div class="tiles" id="tiles"></div>
+    <div class="notes" id="notes"></div>
+  </div>
+
+  <!-- 분포 차트 -->
+  <section class="card">
+    <div class="card-h">
+      <h2>내러티브별 적정 시가총액</h2>
+      <span class="small">단위: 조원 · 빨강은 현재 시총보다 높음, 파랑은 낮음</span>
+    </div>
+    <div class="chart-box" id="chart"></div>
+    <div class="legend">
+      <span><i class="sw"></i>현재 시가총액</span>
+      <span><i class="sw dash"></i>베이스 모델</span>
+      <span><i class="sw acc"></i>확률가중 적정</span>
+      <span><i class="dot" style="background:var(--ink-2)"></i>반사성 적정 (원 크기 = 확률)</span>
+      <span><i class="ring"></i>극단 (오버슈팅 κ)</span>
+    </div>
+  </section>
+
+  <div class="grid2">
+    <div class="stack">
+      <!-- 기준 입력 -->
+      <section class="card">
+        <div class="card-h"><h2>기준 입력</h2><span class="small">베이스 = 홍 대표 구조 + 최신 컨센서스</span></div>
+
+        <div class="fields">
+          <div class="field"><label for="m-index">코스피 지수</label><input type="number" id="m-index" step="0.01" data-path="market.index"><span class="hint">11/13 종가</span></div>
+          <div class="field"><label for="m-refIndex">환산 기준 지수</label><input type="number" id="m-refIndex" step="0.01" data-path="market.refIndex"><span class="hint">6/11 종가</span></div>
+          <div class="field"><label for="m-refCap">기준 시총 (조원)</label><input type="number" id="m-refCap" step="0.001" data-path="market.refCap"><span class="hint">6/11 유가증권시장</span></div>
+        </div>
+
+        <div class="field"><label>업사이클 순이익 경로 (조원) · 회색 연도는 업사이클 밖</label></div>
+        <div class="epath" id="epath"></div>
+
+        <div class="fields">
+          <div class="field"><label for="b-N">업사이클 연수 N</label><input type="number" id="b-N" min="1" max="5" step="1" data-path="base.N"><span class="hint">1~5년</span></div>
+          <div class="field"><label for="b-semi">반도체 정상 이익</label><input type="number" id="b-semi" step="5" data-path="base.semi"><span class="hint">조원/년</span></div>
+          <div class="field"><label for="b-oth">비반도체 정상 이익</label><input type="number" id="b-oth" step="5" data-path="base.oth"><span class="hint">조원/년</span></div>
+          <div class="field"><label for="b-per">정상 PER</label><input type="number" id="b-per" step="0.5" data-path="base.per"><span class="hint">배 · 20년 평균 10</span></div>
+          <div class="field"><label for="b-ktb">국고채 10년 (%)</label><input type="number" id="b-ktb" step="0.05" data-path="base.ktb"><span class="hint">11/3 종가 4.00</span></div>
+          <div class="field"><label for="b-erp">주식 위험 프리미엄 (%p)</label><input type="number" id="b-erp" step="0.25" data-path="base.erp"><span class="hint">r = 국고 10년 + ERP</span></div>
+        </div>
+
+        <div class="scroll">
+          <table class="kv" id="basekv"></table>
+        </div>
+      </section>
+    </div>
+
+    <div class="stack">
+      <!-- 반사성 -->
+      <section class="card">
+        <div class="card-h"><h2>반사성 파라미터</h2><span class="small num" id="mval"></span></div>
+        <div class="fields">
+          <div class="field"><label for="r-phi">φ 감쇠</label><input type="number" id="r-phi" step="0.01" data-path="reflex.phi"><span class="hint">주가 ↑ → 금리·원화 ↑ → 할인율 ↑</span></div>
+          <div class="field"><label for="r-psi">ψ 증폭</label><input type="number" id="r-psi" step="0.01" data-path="reflex.psi"><span class="hint">주가 ↑ → 외국인 유입·부의 효과 → 멀티플 ↑</span></div>
+          <div class="field"><label for="r-kappa">κ 오버슈팅 (%)</label><input type="number" id="r-kappa" step="5" data-path="reflex.kappa"><span class="hint">포지션 쏠림</span></div>
+        </div>
+        <p class="small">m = 1 / (1 + φ − ψ). Δ는 각 내러티브의 DCF 값에서 베이스 모델을 뺀 값입니다.</p>
+      </section>
+
+      <!-- 역산 -->
+      <section class="card">
+        <div class="card-h"><h2>역산: 현재 시총이 반영하는 미래</h2></div>
+        <p class="small">베이스 이익 경로·PER·할인율을 둔 채, 현재 시가총액을 정당화하는 정상 이익을 업사이클 연수별로 풉니다.</p>
+        <div class="scroll"><table class="kv" id="implied"></table></div>
+        <p class="small" id="impliedNote"></p>
+      </section>
+    </div>
+  </div>
+
+  <!-- 내러티브 표 -->
+  <section class="card">
+    <div class="card-h">
+      <h2>내러티브</h2>
+      <div class="btns">
+        <span class="psum" id="psum"></span>
+        <button type="button" id="addRow">내러티브 추가</button>
+        <button type="button" class="ghost" id="normP">확률 100%로 맞추기</button>
+      </div>
+    </div>
+    <p class="small">각 줄은 베이스 대비 변화량입니다. 이익 Δ는 연도별 비율(%), 2029 이후 열은 2029~2031년에 함께 적용됩니다.</p>
+    <div class="scroll">
+      <table class="narr" id="narr">
+        <thead>
+          <tr>
+            <th rowspan="2">내러티브</th><th rowspan="2" class="n">확률 %</th>
+            <th colspan="3" class="grp sep">업사이클 이익 Δ%</th>
+            <th rowspan="2" class="n">ΔN 년</th>
+            <th colspan="2" class="grp">정상 이익 Δ조</th>
+            <th rowspan="2" class="n">ΔPER</th><th rowspan="2" class="n">Δr %p</th>
+            <th rowspan="2" class="n sep">DCF 값</th><th rowspan="2" class="n">반사성 적정</th><th rowspan="2" class="n">극단</th><th rowspan="2" class="n">현재 대비</th><th rowspan="2"></th>
+          </tr>
+          <tr>
+            <th class="n sep">2027</th><th class="n">2028</th><th class="n">2029+</th>
+            <th class="n">반도체</th><th class="n">비반도체</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 민감도 -->
+  <div class="grid2">
+    <section class="card">
+      <div class="card-h"><h2>민감도: 업사이클 연수 × 정상 이익</h2></div>
+      <p class="small">베이스 이익 경로·PER·할인율 고정. 셀 색은 현재 시총 대비 위(빨강)·아래(파랑). 테두리는 베이스.</p>
+      <div class="scroll"><table class="heat" id="heat1"></table></div>
+    </section>
+    <section class="card">
+      <div class="card-h"><h2>민감도: 할인율 × 정상 PER</h2></div>
+      <p class="small">베이스 시나리오 고정. 할인율은 국고 10년 + ERP 기준 ±2%p.</p>
+      <div class="scroll"><table class="heat" id="heat2"></table></div>
+    </section>
+  </div>
+
+  <!-- 지표 -->
+  <section class="card">
+    <div class="card-h">
+      <h2>반사성 지표 · 반증 신호</h2>
+      <div class="balance" id="balance"></div>
+    </div>
+    <p class="small">판정 시점: 2027년 2월(4분기 실적 시즌), 2027년 7월(2분기 실적 시즌)의 2028년 컨센서스 방향. 값을 비우면 "입력 필요"로 표시됩니다.</p>
+    <div class="scroll">
+      <table class="ind" id="ind">
+        <thead><tr><th>지표</th><th class="n">현재</th><th>발동 조건</th><th>발동 시 방향</th><th>상태</th><th>메모</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 설정 JSON -->
+  <section class="card">
+    <div class="card-h">
+      <h2>설정 JSON</h2>
+      <div class="btns">
+        <button type="button" class="primary" id="copyJson">설정 JSON 복사</button>
+        <button type="button" id="applyJson">붙여넣은 JSON 적용</button>
+        <button type="button" class="ghost" id="resetAll">기본값 복원</button>
+      </div>
+    </div>
+    <p class="small">페이지에서 고친 값은 이 브라우저에 저장됩니다. 다른 곳에 옮기거나 Claude에게 보낼 때는 복사해서 붙여 넣으세요.</p>
+    <span class="status" id="jsonStatus"></span>
+    <textarea id="json" spellcheck="false" aria-label="설정 JSON"></textarea>
+  </section>
+
+  <section class="card">
+    <details class="method">
+      <summary>방법론과 한계</summary>
+      <div class="method-body">
+        <p>PER = 시가총액 ÷ 예상 순이익입니다. 현재 이익이 과거 평균보다 이례적으로 높으면 PER이 낮게 나오는데, 이것은 싸다는 뜻이 아니라 분모가 일시적으로 부풀었다는 뜻일 수 있습니다. 그래서 업사이클 기간 이익과 사이클 이후 정상 이익을 나눠 추산한 뒤 현재가치로 할인합니다.</p>
+<pre>정상 이익 NE   = 반도체 정상 이익 + 비반도체 정상 이익
+터미널 가치 TV = NE × 정상 PER
+적정 시총 PV   = Σ E_t ÷ (1+r)^t  +  TV ÷ (1+r)^N
+단순법         = (Σ E_t + TV) ÷ (1+r)^N
+할인율 r       = 국고채 10년 + 주식 위험 프리미엄
+
+내러티브 값 V  = PV(베이스 + 내러티브 Δ)
+Δ              = V − PV(베이스)
+반사성 승수 m  = 1 / (1 + φ − ψ)
+반사성 적정    = PV(베이스) + m·Δ
+극단           = PV(베이스) + m·Δ·(1+κ)
+시장 내재 NE   = NE + ε ÷ (PER/(1+r)^N),   ε = 현재 시총 − PV(베이스)</pre>
+        <ul>
+          <li>시가총액은 6/11 지수-시가총액 비율로 환산한 값입니다. 신규 상장·상장 폐지를 반영하지 않아 KRX 공시값과 수십조 원 차이가 날 수 있습니다.</li>
+          <li>순이익을 모두 주주 몫으로 봅니다. 이익이 쌓이기만 하고 주주에게 돌아오지 않으면 적정가치는 표보다 낮습니다.</li>
+          <li>2028년 이후 이익과 정상 이익은 컨센서스가 아니라 가정입니다. 2030·2031년 경로는 업사이클이 길어지는 내러티브에서만 쓰입니다.</li>
+          <li>정상 PER 10배는 반도체 비중이 낮던 시절의 평균입니다.</li>
+          <li>ERP 6.0%p는 원래 모델의 할인율 10%에 맞춘 값입니다. 국고채 10년이 움직이면 할인율도 함께 움직입니다.</li>
+          <li>반사성 파라미터는 판단값입니다. 확률과 함께 분석자의 견해를 숫자로 적어 두는 장치로 쓰세요.</li>
+        </ul>
+      </div>
+    </details>
+  </section>
+
+  <footer>
+    <p>분석 도구이며 투자 권유가 아닙니다.</p>
+    <p>출처:
+      <a href="https://news.mtn.co.kr/article/2026111315370634191" target="_blank" rel="noopener">MTN 11/13 마감시황</a> ·
+      <a href="https://brunch.co.kr/@kid008/1165" target="_blank" rel="noopener">6/11 유가증권시장 시가총액</a> ·
+      <a href="https://news.bizwatch.co.kr/article/market/2026/11/10/0006" target="_blank" rel="noopener">메리츠 2027 순이익 1,125조</a> ·
+      <a href="https://www.heraldk.com/article/2026081319245487901" target="_blank" rel="noopener">삼전닉스 영업이익 컨센서스</a> ·
+      <a href="https://www.fnnews.com/news/202607091500146592" target="_blank" rel="noopener">2028년 이익 둔화 전망</a> ·
+      <a href="https://www.dailian.co.kr/news/view/1713779" target="_blank" rel="noopener">초과이익 유효기간 1.4년</a>
+    </p>
+  </footer>
+</div>
+
+<div id="tip" hidden></div>
+
+<script>
+(function () {
+  "use strict";
+  var STORE = "kospi-cycle-dcf-v1";
+  var YEARS = [2027, 2028, 2029, 2030, 2031];
+  var DEFAULT = JSON.parse(document.getElementById("config").textContent);
+  var state = load() || clone(DEFAULT);
+
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+  function load() {
+    try { var s = localStorage.getItem(STORE); return s ? normalize(JSON.parse(s)) : null; } catch (e) { return null; }
+  }
+  function save() { try { localStorage.setItem(STORE, JSON.stringify(state)); } catch (e) {} }
+  function normalize(s) {
+    var d = clone(DEFAULT);
+    if (!s || typeof s !== "object") return null;
+    ["market", "base", "reflex"].forEach(function (k) { if (s[k]) Object.assign(d[k], s[k]); });
+    if (Array.isArray(s.narratives)) d.narratives = s.narratives;
+    if (Array.isArray(s.indicators)) d.indicators = s.indicators;
+    if (s.asOf) d.asOf = s.asOf;
+    while (d.base.E.length < 5) d.base.E.push(d.base.E[d.base.E.length - 1] || 0);
+    return d;
+  }
+
+  /* ---------- 계산 ---------- */
+  var num = function (v, f) { v = Number(v); return isFinite(v) ? v : (f || 0); };
+  function marketCap() { var m = state.market; return num(m.index) * num(m.refCap) / (num(m.refIndex) || 1); }
+  function baseRate() { return (num(state.base.ktb) + num(state.base.erp)) / 100; }
+  function clampN(n) { return Math.max(1, Math.min(5, Math.round(n))); }
+
+  function pv(E, N, NE, per, r) {
+    var pe = 0, sumE = 0;
+    for (var t = 0; t < N; t++) { pe += E[t] / Math.pow(1 + r, t + 1); sumE += E[t]; }
+    var tv = NE * per, d = Math.pow(1 + r, N);
+    return { pe: pe, tv: tv, pvtv: tv / d, total: pe + tv / d, simple: (sumE + tv) / d };
+  }
+  function baseInputs() {
+    var b = state.base;
+    return { E: b.E.map(num), N: clampN(num(b.N, 3)), semi: num(b.semi), oth: num(b.oth), per: num(b.per), r: baseRate() };
+  }
+  function narrInputs(x) {
+    var b = baseInputs();
+    var E = b.E.map(function (e, i) {
+      var d = i === 0 ? x.dE27 : i === 1 ? x.dE28 : x.dE29;
+      return e * (1 + num(d) / 100);
+    });
+    return { E: E, N: clampN(b.N + num(x.dN)), semi: b.semi + num(x.dSemi), oth: b.oth + num(x.dOth), per: b.per + num(x.dPer), r: b.r + num(x.dR) / 100 };
+  }
+  function run(i) { return pv(i.E, i.N, i.semi + i.oth, i.per, i.r); }
+
+  function compute() {
+    var MC = marketCap(), bi = baseInputs(), B = run(bi);
+    var rf = state.reflex, m = 1 / (1 + num(rf.phi) - num(rf.psi)), k = num(rf.kappa) / 100;
+    var rows = state.narratives.map(function (x) {
+      var V = run(narrInputs(x)).total, D = V - B.total;
+      return { x: x, p: Math.max(0, num(x.p)), V: V, adj: B.total + m * D, ext: B.total + m * D * (1 + k) };
+    });
+    var ps = rows.reduce(function (a, r) { return a + r.p; }, 0);
+    var w = ps > 0 ? rows.reduce(function (a, r) { return a + r.p * r.adj; }, 0) / ps : B.total;
+    var hi = rows.length ? Math.max.apply(null, rows.map(function (r) { return r.ext; })) : B.total;
+    var lo = rows.length ? Math.min.apply(null, rows.map(function (r) { return r.ext; })) : B.total;
+    var implied = [1, 2, 3, 4, 5].map(function (N) {
+      var pe = pv(bi.E, N, 0, 0, bi.r).pe;
+      return { N: N, ne: (MC - pe) * Math.pow(1 + bi.r, N) / (bi.per || 1) };
+    });
+    return { MC: MC, bi: bi, B: B, m: m, k: k, rows: rows, ps: ps, w: w, hi: hi, lo: lo, implied: implied };
+  }
+
+  /* ---------- 포맷 ---------- */
+  var nf0 = new Intl.NumberFormat("ko-KR", { maximumFractionDigits: 0 });
+  var nf1 = new Intl.NumberFormat("ko-KR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  var nf2 = new Intl.NumberFormat("ko-KR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  function jo(v) { return nf0.format(Math.round(v)); }
+  function pct(v) { return (v >= 0 ? "+" : "−") + nf1.format(Math.abs(v * 100)) + "%"; }
+  function cls(v, ref) { return v > ref * 1.0005 ? "up" : v < ref * 0.9995 ? "down" : ""; }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+
+  /* ---------- 렌더 ---------- */
+  function renderAll() {
+    bindFields();
+    renderEPath();
+    renderNarrTable();
+    renderIndTable();
+    update();
+  }
+
+  function getPath(p) { return p.split(".").reduce(function (o, k) { return o[k]; }, state); }
+  function setPath(p, v) {
+    var ks = p.split("."), o = state;
+    for (var i = 0; i < ks.length - 1; i++) o = o[ks[i]];
+    o[ks[ks.length - 1]] = v;
+  }
+  function bindFields() {
+    document.querySelectorAll("[data-path]").forEach(function (el) { el.value = getPath(el.dataset.path); });
+  }
+
+  function renderEPath() {
+    var box = document.getElementById("epath");
+    box.innerHTML = YEARS.map(function (y, i) {
+      return '<div class="field"><label for="e-' + i + '">' + y + '</label><input type="number" id="e-' + i + '" step="5" data-e="' + i + '" value="' + state.base.E[i] + '"></div>';
+    }).join("");
+  }
+
+  function narrCell(i, key, step) {
+    return '<td class="n"><input type="number" step="' + step + '" id="n' + i + '-' + key + '" data-row="' + i + '" data-key="' + key + '" value="' + esc(state.narratives[i][key]) + '" aria-label="' + key + '"></td>';
+  }
+  function renderNarrTable() {
+    var tb = document.querySelector("#narr tbody");
+    tb.innerHTML = state.narratives.map(function (x, i) {
+      return "<tr>" +
+        '<td><input type="text" id="n' + i + '-name" data-row="' + i + '" data-key="name" value="' + esc(x.name) + '" aria-label="내러티브 이름"></td>' +
+        narrCell(i, "p", 5) +
+        narrCell(i, "dE27", 1).replace('class="n"', 'class="n sep"') + narrCell(i, "dE28", 1) + narrCell(i, "dE29", 1) +
+        narrCell(i, "dN", 1) + narrCell(i, "dSemi", 10) + narrCell(i, "dOth", 10) + narrCell(i, "dPer", 0.5) + narrCell(i, "dR", 0.25) +
+        '<td class="out sep" id="o' + i + '-V"></td><td class="out" id="o' + i + '-adj"></td><td class="out" id="o' + i + '-ext"></td><td class="out" id="o' + i + '-pct"></td>' +
+        '<td><button type="button" class="x" data-del="' + i + '" aria-label="삭제">삭제</button></td>' +
+        "</tr>";
+    }).join("");
+  }
+
+  var OPS = ["<", "<=", ">", ">="];
+  var OPL = { "<": "<", "<=": "≤", ">": ">", ">=": "≥" };
+  function renderIndTable() {
+    var tb = document.querySelector("#ind tbody");
+    tb.innerHTML = state.indicators.map(function (x, i) {
+      var val = x.auto ? '<span class="num" id="iv' + i + '"></span>' :
+        '<input type="number" step="0.1" id="i' + i + '-value" data-ind="' + i + '" data-key="value" value="' + (x.value == null ? "" : esc(x.value)) + '" aria-label="현재 값">';
+      var op = '<select id="i' + i + '-op" data-ind="' + i + '" data-key="op" aria-label="조건">' + OPS.map(function (o) { return '<option value="' + o + '"' + (o === x.op ? " selected" : "") + ">" + OPL[o] + "</option>"; }).join("") + "</select> " +
+        '<input type="number" step="0.1" id="i' + i + '-th" data-ind="' + i + '" data-key="th" value="' + esc(x.th) + '" aria-label="기준값">';
+      var dir = '<select id="i' + i + '-dir" data-ind="' + i + '" data-key="dir" aria-label="방향"><option value="up"' + (x.dir === "up" ? " selected" : "") + '>시총 ↑</option><option value="down"' + (x.dir === "down" ? " selected" : "") + ">시총 ↓</option></select>";
+      return "<tr><td>" + esc(x.name) + '</td><td class="n">' + val + "</td><td>" + op + "</td><td>" + dir + '</td><td id="is' + i + '"></td><td class="small">' + esc(x.note || "") + "</td></tr>";
+    }).join("");
+  }
+
+  function update() {
+    var c = compute();
+    document.getElementById("asof").textContent = state.asOf || "";
+
+    // 결과 띠
+    var tiles = [
+      { k: "현재 시가총액", v: c.MC, d: "지수 " + nf2.format(num(state.market.index)) },
+      { k: "베이스 모델", v: c.B.total, d: pct(c.B.total / c.MC - 1), dc: cls(c.B.total, c.MC) },
+      { k: "확률가중 적정", v: c.w, d: pct(c.w / c.MC - 1), dc: cls(c.w, c.MC), hl: true },
+      { k: "상방 극단", v: c.hi, d: pct(c.hi / c.MC - 1), dc: cls(c.hi, c.MC) },
+      { k: "하방 극단", v: c.lo, d: pct(c.lo / c.MC - 1), dc: cls(c.lo, c.MC) }
+    ];
+    document.getElementById("tiles").innerHTML = tiles.map(function (t) {
+      return '<div class="tile' + (t.hl ? " hl" : "") + '"><span class="k">' + t.k + '</span><span class="v">' + jo(t.v) + '<small>조</small></span><span class="d ' + (t.dc || "") + '">' + t.d + "</span></div>";
+    }).join("");
+    var bN = c.bi.N, imp = c.implied[bN - 1].ne, NE = c.bi.semi + c.bi.oth;
+    document.getElementById("notes").innerHTML =
+      "<span>할인율 r <b>" + nf2.format(c.bi.r * 100) + "%</b></span>" +
+      "<span>반사성 승수 m <b>" + nf2.format(c.m) + "×</b></span>" +
+      "<span>시장 − 모델 ε <b>" + (c.MC - c.B.total >= 0 ? "+" : "−") + jo(Math.abs(c.MC - c.B.total)) + "조</b></span>" +
+      "<span>시장 내재 정상 이익 (N=" + bN + ") <b>" + jo(imp) + "조</b> · 모델 " + jo(NE) + "조</span>";
+
+    // 기준 결과표
+    var B = c.B;
+    document.getElementById("basekv").innerHTML =
+      "<tbody>" +
+      row(bN + "년 이익의 현재가치", B.pe) +
+      row("정상 이익 NE", NE) +
+      row("터미널 가치 (NE × " + nf1.format(c.bi.per) + "배)", B.tv) +
+      row("터미널 가치의 현재가치", B.pvtv) +
+      '<tr class="total"><td>적정 시가총액 (연도별 할인)</td><td class="n">' + jo(B.total) + '조</td><td class="n ' + cls(B.total, c.MC) + '">' + pct(B.total / c.MC - 1) + "</td></tr>" +
+      row("참고: 단순법", B.simple, pct(B.simple / c.MC - 1)) +
+      row("적정가치 중 터미널 비중", null, nf0.format(B.pvtv / B.total * 100) + "%") +
+      "</tbody>";
+    function row(k, v, extra) {
+      return "<tr><td>" + k + '</td><td class="n">' + (v == null ? "" : jo(v) + "조") + '</td><td class="n small">' + (extra || "") + "</td></tr>";
+    }
+    document.querySelectorAll("#epath .field").forEach(function (f, i) { f.classList.toggle("off", i >= bN); });
+
+    document.getElementById("mval").textContent = "m = " + nf2.format(c.m) + "×";
+
+    // 역산
+    document.getElementById("implied").innerHTML =
+      '<thead><tr><th>업사이클 지속</th><th class="n">반영된 정상 이익</th><th class="n">모델 대비</th></tr></thead><tbody>' +
+      c.implied.map(function (r) {
+        return "<tr" + (r.N === bN ? ' style="font-weight:600"' : "") + "><td>" + r.N + "년 (" + YEARS[r.N - 1] + "년까지)</td><td class=\"n\">" + jo(r.ne) + '조</td><td class="n ' + cls(r.ne, NE) + '">' + pct(r.ne / NE - 1) + "</td></tr>";
+      }).join("") + "</tbody>";
+    var I = c.implied, near = I.slice().sort(function (a, b) { return Math.abs(a.ne - NE) - Math.abs(b.ne - NE); })[0];
+    document.getElementById("impliedNote").textContent = I[0].ne < NE
+      ? "업사이클이 1년(2027년)에 끝나도 현재 가격이 반영하는 정상 이익은 " + jo(I[0].ne) + "조로 모델값 " + jo(NE) + "조보다 낮습니다. 2년이면 " + jo(I[1].ne) + "조, 3년이면 " + jo(I[2].ne) + "조입니다. 현재 가격은 사이클 단축과 정상 이익 하락을 함께 반영합니다."
+      : "정상 이익 " + jo(NE) + "조를 지킨다면, 현재 가격은 업사이클이 약 " + near.N + "년(" + YEARS[near.N - 1] + "년까지)인 미래와 가장 가깝습니다.";
+
+    // 내러티브 결과
+    c.rows.forEach(function (r, i) {
+      setText("o" + i + "-V", jo(r.V));
+      setText("o" + i + "-adj", jo(r.adj));
+      setText("o" + i + "-ext", jo(r.ext));
+      var el = document.getElementById("o" + i + "-pct");
+      if (el) { el.textContent = pct(r.adj / c.MC - 1); el.className = "out " + cls(r.adj, c.MC); }
+    });
+    var ps = document.getElementById("psum");
+    ps.textContent = "확률 합계 " + nf0.format(c.ps) + "%";
+    ps.className = "psum" + (Math.abs(c.ps - 100) > 0.01 ? " bad" : "");
+
+    renderChart(c);
+    renderHeat(c);
+    updateInd(c);
+    document.getElementById("json").value = JSON.stringify(state, null, 2);
+    save();
+  }
+  function setText(id, t) { var el = document.getElementById(id); if (el) el.textContent = t; }
+
+  /* ---------- 차트 ---------- */
+  function niceStep(span) {
+    var raw = span / 6, p = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / p;
+    return (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10) * p;
+  }
+  function renderChart(c) {
+    var rows = c.rows;
+    var vals = [c.MC, c.B.total, c.w];
+    rows.forEach(function (r) { vals.push(r.adj, r.ext); });
+    var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals), pad = (hi - lo) * 0.06 || 200;
+    lo -= pad; hi += pad;
+    var step = niceStep(hi - lo);
+    lo = Math.floor(lo / step) * step; hi = Math.ceil(hi / step) * step;
+
+    var W = 860, L = 230, R = 24, T = 50, RH = 38, H = T + rows.length * RH + 30;
+    var x = function (v) { return L + (v - lo) / (hi - lo) * (W - L - R); };
+    var maxP = Math.max.apply(null, rows.map(function (r) { return r.p; }).concat([1]));
+    var s = '<svg viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="내러티브별 적정 시가총액 도트 차트">';
+    // 그리드·축
+    for (var v = lo; v <= hi + 1e-6; v += step) {
+      s += '<line x1="' + x(v) + '" x2="' + x(v) + '" y1="' + (T - 6) + '" y2="' + (H - 26) + '" stroke="var(--line)" stroke-width="1"/>';
+      s += '<text x="' + x(v) + '" y="' + (H - 8) + '" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="var(--font-num)">' + nf0.format(v) + "</text>";
+    }
+    // 기준선
+    var refs = [
+      { v: c.MC, label: "현재 " + jo(c.MC), stroke: "var(--ink)", dash: "", w: 2 },
+      { v: c.B.total, label: "베이스 " + jo(c.B.total), stroke: "var(--muted)", dash: "5 4", w: 1.5 },
+      { v: c.w, label: "가중 " + jo(c.w), stroke: "var(--accent)", dash: "", w: 3 }
+    ].sort(function (a, b) { return a.v - b.v; });
+    refs.forEach(function (rf, j) {
+      s += '<line x1="' + x(rf.v) + '" x2="' + x(rf.v) + '" y1="' + (T - 6) + '" y2="' + (H - 26) + '" stroke="' + rf.stroke + '" stroke-width="' + rf.w + '"' + (rf.dash ? ' stroke-dasharray="' + rf.dash + '"' : "") + "/>";
+    });
+    // 라벨 겹침 방지: 3단 배치
+    refs.forEach(function (rf, j) {
+      var yy = 12 + j * 13;
+      var anchor = x(rf.v) > W - 120 ? "end" : x(rf.v) < L + 60 ? "start" : "middle";
+      s += '<text x="' + x(rf.v) + '" y="' + yy + '" text-anchor="' + anchor + '" font-size="11.5" font-weight="600" fill="' + (rf.stroke === "var(--muted)" ? "var(--ink-2)" : rf.stroke) + '" font-family="var(--font-num)">' + rf.label + "</text>";
+    });
+    // 행
+    rows.forEach(function (r, i) {
+      var y = T + i * RH + RH / 2;
+      var col = r.adj > c.MC ? "var(--up)" : r.adj < c.MC ? "var(--down)" : "var(--mid)";
+      var name = r.x.name.length > 21 ? r.x.name.slice(0, 20) + "…" : r.x.name;
+      s += '<text x="12" y="' + (y + 4) + '" font-size="12.5" fill="var(--ink)">' + esc(name) + "</text>";
+      s += '<text x="' + (L - 12) + '" y="' + (y + 4) + '" text-anchor="end" font-size="11.5" fill="var(--muted)" font-family="var(--font-num)">' + nf0.format(r.p) + "%</text>";
+      s += '<line class="bar" x1="' + x(c.B.total) + '" x2="' + x(r.ext) + '" y1="' + y + '" y2="' + y + '" stroke="' + col + '" stroke-opacity="0.35" stroke-width="2"/>';
+      s += '<circle cx="' + x(r.ext) + '" cy="' + y + '" r="5" fill="var(--surface)" stroke="' + col + '" stroke-width="2"/>';
+      var rad = 5 + 6 * Math.sqrt(r.p / maxP);
+      s += '<circle cx="' + x(r.adj) + '" cy="' + y + '" r="' + rad + '" fill="' + col + '" stroke="var(--surface)" stroke-width="2"/>';
+      s += '<rect x="0" y="' + (y - RH / 2) + '" width="' + W + '" height="' + RH + '" fill="transparent" data-tip="' + i + '"/>';
+    });
+    s += "</svg>";
+    var box = document.getElementById("chart");
+    box.innerHTML = s;
+    box.__rows = rows; box.__c = c;
+  }
+  var tip = document.getElementById("tip");
+  document.getElementById("chart").addEventListener("pointermove", function (e) {
+    var t = e.target.getAttribute && e.target.getAttribute("data-tip");
+    if (t == null) { tip.hidden = true; return; }
+    var box = this, r = box.__rows[+t], c = box.__c;
+    tip.innerHTML = esc(r.x.name) + " · 확률 " + nf0.format(r.p) + "%<br>DCF 값 <b>" + jo(r.V) + "조</b><br>반사성 적정 <b>" + jo(r.adj) + "조</b> (" + pct(r.adj / c.MC - 1) + ")<br>극단 <b>" + jo(r.ext) + "조</b>";
+    tip.hidden = false;
+    var tx = Math.min(e.clientX + 14, window.innerWidth - tip.offsetWidth - 8);
+    tip.style.left = tx + "px"; tip.style.top = (e.clientY + 14) + "px";
+  });
+  document.getElementById("chart").addEventListener("pointerleave", function () { tip.hidden = true; });
+
+  /* ---------- 히트맵 ---------- */
+  function heatStyle(v, MC) {
+    var d = v / MC - 1, a = Math.min(Math.abs(d) / 0.6, 1) * 62;
+    var hue = d >= 0 ? "var(--up)" : "var(--down)";
+    return "background: color-mix(in oklab, " + hue + " " + a.toFixed(0) + "%, var(--surface))";
+  }
+  function renderHeat(c) {
+    var bi = c.bi, NE = bi.semi + bi.oth;
+    var nes = [250, 300, 350, 400, 450, 500];
+    if (nes.indexOf(NE) < 0) { nes.push(NE); nes.sort(function (a, b) { return a - b; }); }
+    var h = '<thead><tr><th>업사이클 \\ 정상 이익</th>' + nes.map(function (n) { return '<th class="n">' + nf0.format(n) + "조</th>"; }).join("") + "</tr></thead><tbody>";
+    for (var N = 1; N <= 5; N++) {
+      h += '<tr><td class="rh">' + N + "년 (" + YEARS[N - 1] + ")</td>";
+      nes.forEach(function (n) {
+        var v = pv(bi.E, N, n, bi.per, bi.r).total;
+        h += '<td class="cell' + (N === bi.N && n === NE ? " base" : "") + '" style="' + heatStyle(v, c.MC) + '" title="' + pct(v / c.MC - 1) + ' vs 현재">' + jo(v) + "</td>";
+      });
+      h += "</tr>";
+    }
+    document.getElementById("heat1").innerHTML = h + "</tbody>";
+
+    var rs = [-2, -1, 0, 1, 2].map(function (d) { return bi.r + d / 100; });
+    var pers = [8, 9, 10, 11, 12];
+    if (pers.indexOf(bi.per) < 0) { pers.push(bi.per); pers.sort(function (a, b) { return a - b; }); }
+    var g = '<thead><tr><th>할인율 \\ PER</th>' + pers.map(function (p) { return '<th class="n">' + nf1.format(p) + "배</th>"; }).join("") + "</tr></thead><tbody>";
+    rs.forEach(function (r, j) {
+      g += '<tr><td class="rh">' + nf1.format(r * 100) + "%</td>";
+      pers.forEach(function (p) {
+        var v = pv(bi.E, bi.N, NE, p, r).total;
+        g += '<td class="cell' + (j === 2 && p === bi.per ? " base" : "") + '" style="' + heatStyle(v, c.MC) + '" title="' + pct(v / c.MC - 1) + ' vs 현재">' + jo(v) + "</td>";
+      });
+      g += "</tr>";
+    });
+    document.getElementById("heat2").innerHTML = g + "</tbody>";
+  }
+
+  /* ---------- 지표 ---------- */
+  function updateInd(c) {
+    var up = 0, down = 0, need = 0;
+    state.indicators.forEach(function (x, i) {
+      var v = x.auto === "gap" ? (c.MC / c.B.total - 1) * 100 : (x.value === "" || x.value == null ? null : Number(x.value));
+      if (x.auto) setText("iv" + i, v == null ? "—" : nf1.format(v));
+      var el = document.getElementById("is" + i);
+      if (!el) return;
+      if (v == null || !isFinite(v)) { el.innerHTML = '<span class="pill need">입력 필요</span>'; need++; return; }
+      var th = num(x.th), on = x.op === "<" ? v < th : x.op === "<=" ? v <= th : x.op === ">" ? v > th : v >= th;
+      if (on) { if (x.dir === "up") up++; else down++; }
+      el.innerHTML = on ? '<span class="pill on-' + x.dir + '">발동 · ' + (x.dir === "up" ? "시총 ↑" : "시총 ↓") + "</span>" : '<span class="pill">대기</span>';
+    });
+    document.getElementById("balance").innerHTML =
+      '<span class="up">상방 발동 <b class="num">' + up + "</b></span>" +
+      '<span class="down">하방 발동 <b class="num">' + down + "</b></span>" +
+      '<span class="small">입력 필요 <b class="num">' + need + "</b></span>";
+  }
+
+  /* ---------- 이벤트 ---------- */
+  document.addEventListener("input", function (e) {
+    var el = e.target, d = el.dataset;
+    if (d.path) { setPath(d.path, el.value === "" ? 0 : Number(el.value)); update(); }
+    else if (d.e != null) { state.base.E[+d.e] = el.value === "" ? 0 : Number(el.value); update(); }
+    else if (d.row != null) {
+      state.narratives[+d.row][d.key] = d.key === "name" ? el.value : (el.value === "" ? 0 : Number(el.value));
+      update();
+    } else if (d.ind != null && el.tagName === "INPUT") {
+      state.indicators[+d.ind][d.key] = el.value === "" ? null : Number(el.value);
+      update();
+    }
+  });
+  document.addEventListener("change", function (e) {
+    var el = e.target, d = el.dataset;
+    if (d.ind != null && el.tagName === "SELECT") { state.indicators[+d.ind][d.key] = el.value; update(); }
+  });
+  document.getElementById("narr").addEventListener("click", function (e) {
+    var i = e.target.getAttribute("data-del");
+    if (i == null) return;
+    state.narratives.splice(+i, 1);
+    renderNarrTable(); update();
+  });
+  document.getElementById("addRow").addEventListener("click", function () {
+    state.narratives.push({ name: "새 내러티브", p: 0, dE27: 0, dE28: 0, dE29: 0, dN: 0, dSemi: 0, dOth: 0, dPer: 0, dR: 0 });
+    renderNarrTable(); update();
+    var el = document.getElementById("n" + (state.narratives.length - 1) + "-name");
+    if (el) { el.focus(); el.select(); }
+  });
+  document.getElementById("normP").addEventListener("click", function () {
+    var s = state.narratives.reduce(function (a, x) { return a + Math.max(0, num(x.p)); }, 0);
+    if (s <= 0) return;
+    state.narratives.forEach(function (x) { x.p = Math.round(Math.max(0, num(x.p)) / s * 1000) / 10; });
+    renderNarrTable(); update();
+  });
+
+  var status = document.getElementById("jsonStatus");
+  function say(msg, err) { status.textContent = msg; status.className = "status" + (err ? " err" : ""); }
+  document.getElementById("copyJson").addEventListener("click", function () {
+    var ta = document.getElementById("json"), txt = JSON.stringify(state, null, 2);
+    ta.value = txt;
+    var fallback = function () { ta.focus(); ta.select(); say("복사 권한이 없어 텍스트를 선택해 두었습니다. Ctrl+C(⌘C)로 복사하세요."); };
+    try {
+      navigator.clipboard.writeText(txt).then(function () { say("설정 JSON을 복사했습니다."); }, fallback);
+    } catch (e) { fallback(); }
+  });
+  document.getElementById("applyJson").addEventListener("click", function () {
+    try {
+      var s = normalize(JSON.parse(document.getElementById("json").value));
+      if (!s) throw new Error("객체가 아닙니다");
+      state = s; renderAll(); say("JSON을 적용했습니다.");
+    } catch (e) { say("JSON을 읽지 못했습니다: " + e.message + ". 따옴표와 쉼표를 확인하세요.", true); }
+  });
+  var resetArmed = false;
+  document.getElementById("resetAll").addEventListener("click", function () {
+    if (!resetArmed) { resetArmed = true; this.textContent = "한 번 더 누르면 복원"; var b = this; setTimeout(function () { resetArmed = false; b.textContent = "기본값 복원"; }, 3000); return; }
+    resetArmed = false; this.textContent = "기본값 복원";
+    state = clone(DEFAULT); renderAll(); say("기본값으로 되돌렸습니다.");
+  });
+
+  renderAll();
+})();
+</script>
+</body>
+</html>
