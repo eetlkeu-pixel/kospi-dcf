@@ -192,36 +192,75 @@ footer a { color: var(--ink-2); }
 @media (prefers-reduced-motion: no-preference) {
   .chart-box circle, .chart-box line.bar { transition: cx 0.25s ease, x2 0.25s ease; }
 }
+/* --- v2 추가 --- */
+.tile .mc, .mc { font-family: var(--font-num); font-size: 12px; color: var(--muted); font-weight: 500; font-variant-numeric: tabular-nums; }
+.out .mc { display: block; font-size: 11px; font-weight: 400; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-size: 12.5px; font-weight: 500; padding: 6px 11px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line); color: var(--ink-2); display: inline-flex; gap: 6px; align-items: center; }
+.chip .num { font-size: 11.5px; color: var(--muted); }
+.chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--surface); }
+.chip[aria-pressed="true"] .num { color: var(--surface); opacity: 0.75; }
+.detail { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 24px; align-items: start; }
+.detail .desc { color: var(--ink-2); max-width: 62ch; }
+.delta-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.delta { font-family: var(--font-num); font-size: 12px; padding: 3px 8px; border-radius: 6px; background: var(--surface-2); border: 1px solid var(--line); }
+.delta.none { font-family: var(--font-body); color: var(--muted); }
+.result-big { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; }
+.result-big .v { font-family: var(--font-num); font-size: 28px; font-weight: 600; letter-spacing: -0.02em; }
+.result-big .v small { font-size: 13px; color: var(--ink-2); font-weight: 500; }
+table.yr td.off, table.yr th.off { color: var(--muted); opacity: 0.55; }
+table.yr td.chg { font-weight: 700; }
+table.narr tbody tr { cursor: pointer; }
+table.narr tbody tr.sel td { background: var(--accent-soft); }
+table.narr tbody tr.sel td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+table.src td { white-space: normal; min-width: 90px; }
+table.src td:first-child { white-space: nowrap; }
+table.src tr.model td { background: var(--accent-soft); font-weight: 600; }
+.verdict { display: grid; gap: 8px; }
+.verdict p { color: var(--ink-2); max-width: 90ch; }
+.verdict b { color: var(--ink); }
+.tag { display: inline-block; font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 5px; border: 1px solid var(--line); color: var(--ink-2); margin-right: 4px; }
+.tag.hi { color: var(--up); border-color: color-mix(in oklab, var(--up) 40%, var(--line)); }
+.tag.lo { color: var(--down); border-color: color-mix(in oklab, var(--down) 40%, var(--line)); }
+.fixed-note { font-size: 12px; color: var(--ink-2); background: var(--surface-2); border: 1px dashed var(--line); border-radius: 7px; padding: 8px 10px; }
+@media (max-width: 980px) { .detail { grid-template-columns: minmax(0, 1fr); } }
 </style>
 </head>
 <body>
 
 <!--
   설정 데이터 블록. 내러티브를 바꿀 때는 이 JSON만 고치면 된다.
-  E: 2027~2031 순이익 경로(조원). N: 업사이클 연수. semi/oth: 반도체·비반도체 정상 이익. r = (ktb + erp)/100.
-  내러티브 Δ: dE27/dE28/dE29(%, 2029년 이후 공통), dN(년), dSemi/dOth(조원), dPer(배), dR(%p).
+  S: 2027~2031 반도체 순이익 경로(조원). NS: 비반도체 이익(조원/년, 업사이클·정상 기간 모두 고정).
+  N: 업사이클 연수. semi: 반도체 정상 이익. r = (ktb + erp)/100.
+  내러티브 Δ: dS27/dS28/dS29(반도체 이익 %, 2029 열은 2029~2031 공통), dN(년), dSemi(조원), dPer(배), dR(%p).
 -->
 <script type="application/json" id="config">
 {
   "asOf": "2026-11-18",
   "market": { "index": 5290.53, "refIndex": 7763.95, "refCap": 6254.953 },
-  "base": { "E": [1125, 1100, 1050, 1000, 950], "N": 3, "semi": 100, "oth": 300, "per": 10, "ktb": 4.00, "erp": 6.00 },
+  "base": { "S": [760, 700, 630, 560, 500], "NS": 300, "N": 3, "semi": 100, "per": 10, "ktb": 4.00, "erp": 6.00 },
   "reflex": { "phi": 0.05, "psi": 0.10, "kappa": 25 },
   "narratives": [
-    { "name": "공급 부족 2030년까지 연장", "p": 10, "dE27": 0, "dE28": 14, "dE29": 14, "dN": 1, "dSemi": 50, "dOth": 30, "dPer": 1, "dR": 0 },
-    { "name": "낙관: AI 수요 지속", "p": 15, "dE27": 0, "dE28": 13.6, "dE29": 14.3, "dN": 0, "dSemi": 50, "dOth": 30, "dPer": 1, "dR": 0 },
-    { "name": "베이스: 현 전제 유지", "p": 30, "dE27": 0, "dE28": 0, "dE29": 0, "dN": 0, "dSemi": 0, "dOth": 0, "dPer": 0, "dR": 0 },
-    { "name": "2028 반도체 컨센 −20% 하향", "p": 15, "dE27": 0, "dE28": -20, "dE29": -25, "dN": -1, "dSemi": -20, "dOth": 0, "dPer": 0, "dR": 0 },
-    { "name": "금리 상승: 국고 10년 4.5%", "p": 10, "dE27": 0, "dE28": 0, "dE29": 0, "dN": 0, "dSemi": 0, "dOth": -10, "dPer": -1, "dR": 0.5 },
-    { "name": "비관: 2028 하반기 사이클 종료", "p": 20, "dE27": -11.1, "dE28": -36.4, "dE29": -57.1, "dN": 0, "dSemi": -50, "dOth": -80, "dPer": -1, "dR": 0 }
+    { "name": "공급 부족 2030년까지 연장", "p": 10, "dS27": 0, "dS28": 15, "dS29": 25, "dN": 1, "dSemi": 50, "dPer": 1, "dR": 0,
+      "desc": "HBM·서버 D램 장기계약이 이어지고 신규 팹의 실질 기여가 2029년 이후로 밀린다. 골드만삭스(2028 합산 영업이익 1,064조)·메리츠(1,150조)의 '초장기 사이클' 시각." },
+    { "name": "낙관: AI 수요 지속", "p": 15, "dS27": 8, "dS28": 20, "dS29": 20, "dN": 0, "dSemi": 50, "dPer": 1, "dR": 0,
+      "desc": "2027 반도체 이익이 모건스탠리(삼성 688조·하이닉스 468조)·KB(1,111조) 수준으로 올라가고, 2028년에도 증익. 사이클은 2029년에 끝나지만 정상 이익이 150조로 높아진다." },
+    { "name": "베이스: 컨센서스 경로", "p": 30, "dS27": 0, "dS28": 0, "dS29": 0, "dN": 0, "dSemi": 0, "dPer": 0, "dR": 0,
+      "desc": "2027 반도체 순이익 760조(투톱 영업이익 약 960조 × 세후 0.78 + 기타). 2028년 −8%, 2029년 −10%. 에프앤가이드 2028 '정체'와 키움 경로(4Q27 감익)의 중간." },
+    { "name": "2028 반도체 컨센 −20% 하향", "p": 15, "dS27": 0, "dS28": -15, "dS29": -20, "dN": -1, "dSemi": -20, "dPer": 0, "dR": 0,
+      "desc": "키움 경로 현실화: 삼성 분기 영업이익이 2Q27 147.6조에서 4Q27 108.2조로 꺾이고, 2028년 반도체 이익이 2027년 대비 약 −22%. 업사이클은 2028년에 끝난다(반증 신호 ①)." },
+    { "name": "금리 상승: 국고 10년 4.5%", "p": 10, "dS27": 0, "dS28": 0, "dS29": 0, "dN": 0, "dSemi": 0, "dPer": -1, "dR": 0.5,
+      "desc": "이익 경로는 베이스와 같고 할인율만 오른다. 국고 10년이 금리 계산기의 상방 극단 4.50%에 도달하고 정상 PER이 9배로 낮아진다." },
+    { "name": "비관: 2028 하반기 사이클 종료", "p": 20, "dS27": -12, "dS28": -45, "dS29": -65, "dN": 0, "dSemi": -50, "dPer": -1, "dR": 0,
+      "desc": "중국 증설과 HBM 경쟁으로 메모리 가격이 하락하고(모건스탠리 경고), 신규 팹이 가동되는 2028년에 공급 과잉. 반도체 정상 이익 50조, PER 9배." }
   ],
   "indicators": [
-    { "name": "2028 반도체 투톱 영업이익 컨센 증가율 (%)", "value": 0.7, "op": "<", "th": -20, "dir": "down", "note": "943 ÷ 936조, 에프앤가이드 8월" },
-    { "name": "비반도체 2027 이익 증가율 (%)", "value": 11, "op": "<=", "th": 0, "dir": "down", "note": "반증 신호 ②" },
+    { "name": "2028 반도체 투톱 영업이익 컨센 증가율 (%)", "value": 0.7, "op": "<", "th": -20, "dir": "down", "note": "에프앤가이드 8월 943 ÷ 936조. 키움 4Q27 연율화 기준이면 약 −20%" },
+    { "name": "비반도체 2027 이익 증가율 (%)", "value": 11, "op": "<=", "th": 0, "dir": "down", "note": "모델에서는 고정. 0% 이하면 고정값 자체를 낮춰야 함" },
     { "name": "하이퍼스케일러 2028 CAPEX 증가율 (%)", "value": null, "op": "<", "th": 0, "dir": "down", "note": "반증 신호 ③" },
+    { "name": "D램 고정거래가 전분기 대비 (%)", "value": 12, "op": "<", "th": 0, "dir": "down", "note": "트렌드포스 4Q26 범용 D램 +10~15% 전망. 현물은 11월 약세" },
     { "name": "반도체 초과이익 유효기간 (년)", "value": 1.4, "op": "<", "th": 2, "dir": "up", "note": "짧을수록 비관이 가격에 반영됨 (데일리안)" },
     { "name": "국고채 10년 (%)", "value": 4.00, "op": ">=", "th": 4.5, "dir": "down", "note": "할인율 상승. 금리 계산기 상방 극단 4.50" },
-    { "name": "코스피 보통주 배당 증가율 2027 (%)", "value": 9.3, "op": "<", "th": 5, "dir": "down", "note": "주주환원 약화 (메리츠)" },
     { "name": "외국인 코스피 월간 순매수 (조원)", "value": null, "op": "<", "th": 0, "dir": "down", "note": "수급 반사성" },
     { "name": "현재 시총 − 베이스 모델 괴리 (%)", "value": null, "auto": "gap", "op": "<", "th": -20, "dir": "up", "note": "자동 계산" }
   ]
@@ -232,13 +271,13 @@ footer a { color: var(--ink-2); }
 
   <header class="top">
     <div class="meta">
-      <span class="eyebrow">KOSPI · 사이클 분리 DCF · <span id="asof"></span></span>
+      <span class="eyebrow">KOSPI · 반도체 사이클 분리 DCF · <span id="asof"></span></span>
       <h1>코스피 사이클 DCF</h1>
-      <p class="sub">업사이클 이익과 정상 이익을 나눠 할인하고, 내러티브별 변화(Δ)에 반사성 승수를 곱해 적정 시가총액의 범위를 추정합니다.</p>
+      <p class="sub">반도체 이익만 사이클로 움직이고 비반도체 이익은 고정합니다. 적정 시가총액을 코스피 지수로 환산해 보여주고, 괄호 안에 시가총액을 적습니다.</p>
     </div>
     <div class="formula">
-      PV = Σ E<sub>t</sub>/(1+r)<sup>t</sup> + NE·PER/(1+r)<sup>N</sup><br>
-      적정 = 베이스 + m·Δ · 극단 = 베이스 + m·Δ·(1+κ)
+      PV = Σ (S<sub>t</sub> + NS)/(1+r)<sup>t</sup> + (S̄ + NS)·PER/(1+r)<sup>N</sup><br>
+      지수 = PV × 기준 지수 ÷ 기준 시총
     </div>
   </header>
 
@@ -248,15 +287,25 @@ footer a { color: var(--ink-2); }
     <div class="notes" id="notes"></div>
   </div>
 
+  <!-- 시나리오 선택 + 가정 -->
+  <section class="card">
+    <div class="card-h">
+      <h2>시나리오 가정 보기</h2>
+      <span class="small">시나리오를 고르면 반영된 가정이 아래에 펼쳐집니다. 차트나 표의 줄을 눌러도 됩니다.</span>
+    </div>
+    <div class="chips" id="chips" role="group" aria-label="시나리오 선택"></div>
+    <div class="detail" id="detail"></div>
+  </section>
+
   <!-- 분포 차트 -->
   <section class="card">
     <div class="card-h">
-      <h2>내러티브별 적정 시가총액</h2>
-      <span class="small">단위: 조원 · 빨강은 현재 시총보다 높음, 파랑은 낮음</span>
+      <h2>시나리오별 적정 코스피</h2>
+      <span class="small">단위: 지수 포인트 · 빨강은 현재 지수보다 높음, 파랑은 낮음</span>
     </div>
     <div class="chart-box" id="chart"></div>
     <div class="legend">
-      <span><i class="sw"></i>현재 시가총액</span>
+      <span><i class="sw"></i>현재 지수</span>
       <span><i class="sw dash"></i>베이스 모델</span>
       <span><i class="sw acc"></i>확률가중 적정</span>
       <span><i class="dot" style="background:var(--ink-2)"></i>반사성 적정 (원 크기 = 확률)</span>
@@ -264,11 +313,41 @@ footer a { color: var(--ink-2); }
     </div>
   </section>
 
+  <!-- 컨센서스 점검 -->
+  <section class="card">
+    <div class="card-h">
+      <h2>이익 컨센서스 점검</h2>
+      <span class="small">2026-11-18 기준 외부 자료 대조</span>
+    </div>
+    <div class="scroll">
+      <table class="src">
+        <thead><tr><th>구분</th><th>출처 (시점)</th><th class="n">2027</th><th class="n">2028</th><th>메모</th></tr></thead>
+        <tbody>
+          <tr><td>코스피 순이익</td><td>메리츠 (11/10)</td><td class="n">1,125조</td><td class="n">증익 지속</td><td>원래 모델의 2027 입력값. 공개 전망 중 상단</td></tr>
+          <tr><td>코스피 순이익</td><td>iM증권 (상반기)</td><td class="n">1,117조</td><td class="n">—</td><td>반도체 782.5조 + 비반도체 334.8조</td></tr>
+          <tr><td>코스피 순이익</td><td>하나증권 (10/30)</td><td class="n">1,056조</td><td class="n">—</td><td>2026년 794조 대비 +33%</td></tr>
+          <tr class="model"><td>코스피 순이익</td><td>이 모델 베이스</td><td class="n">1,060조</td><td class="n">1,000조</td><td>반도체 760 → 700조 + 비반도체 300조 고정</td></tr>
+          <tr><td>투톱 영업이익</td><td>에프앤가이드 (8월)</td><td class="n">936조</td><td class="n">943조</td><td>2028년 정체. 7월 집계는 삼성 −5.9%, 하이닉스 −0.8%</td></tr>
+          <tr><td>투톱 영업이익</td><td>키움 (11/17)</td><td class="n">약 923조</td><td class="n">감익</td><td>삼성 540·하이닉스 383조. 분기 정점 2Q27, 삼성 4Q27 108.2조</td></tr>
+          <tr><td>투톱 영업이익</td><td>모건스탠리 (11/10)</td><td class="n">약 1,156조</td><td class="n">소폭 상향</td><td>2027 상향, 목표가는 하향. 2028년 이후 수익성 유지 어려움</td></tr>
+          <tr><td>투톱 영업이익</td><td>KB (11월 초)</td><td class="n">1,111조</td><td class="n">—</td><td>삼성 640.2·하이닉스 470.3조</td></tr>
+          <tr><td>투톱 영업이익</td><td>골드만·메리츠·UBS</td><td class="n">—</td><td class="n">1,064~1,569조</td><td>2028 낙관 진영</td></tr>
+          <tr><td>메모리 가격</td><td>트렌드포스</td><td class="n">상승 둔화</td><td class="n">공급 본격 증가</td><td>고정거래가는 2027년까지 오르되 상승폭 축소. 신규 생산능력은 2H27 가동, 2028년 기여</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="verdict">
+      <p><span class="tag hi">2027 다소 높음</span>원래 입력값 1,125조는 공개 전망 범위(1,056~1,125조)의 상단입니다. 반도체 순이익을 투톱 영업이익 약 960조(에프앤가이드 936조와 키움 923조에 최근 상향분 일부 반영)에 세후 비율 0.78을 곱해 760조로 잡고, 비반도체는 원래 모델의 정상 이익 300조로 고정했습니다(2027년 추정치는 iM 334.8조로 이보다 높음). 합계는 <b>1,060조</b>로 하나증권 1,056조와 비슷한 보수적 수준입니다.</p>
+      <p><span class="tag hi">2028 가장 불확실</span>원래 경로(2028 −2%)는 에프앤가이드 '정체'와 맞지만, 11월 들어 키움·모건스탠리가 2027년 하반기 감익과 2028년 공급 증가를 근거로 목표가를 내렸습니다. 키움 경로를 연율화하면 2028년 삼성 이익은 약 −20%로, 반증 신호 ①의 기준선에 닿습니다. 베이스는 두 시각의 중간인 반도체 <b>−8%</b>, 2029년 <b>−10%</b>로 두었습니다.</p>
+      <p><span class="tag">확인 못 함</span>11월 기준 에프앤가이드 컨센서스 원자료, 메리츠 1,125조의 반도체·비반도체 구성, SK하이닉스 3분기 확정 실적. 원문 일부는 이 작업 환경의 네트워크에서 열리지 않아 기사 요약으로 확인했습니다.</p>
+    </div>
+  </section>
+
   <div class="grid2">
     <div class="stack">
       <!-- 기준 입력 -->
       <section class="card">
-        <div class="card-h"><h2>기준 입력</h2><span class="small">베이스 = 홍 대표 구조 + 최신 컨센서스</span></div>
+        <div class="card-h"><h2>기준 입력</h2><span class="small">베이스 = 컨센서스 점검 반영</span></div>
 
         <div class="fields">
           <div class="field"><label for="m-index">코스피 지수</label><input type="number" id="m-index" step="0.01" data-path="market.index"><span class="hint">11/13 종가</span></div>
@@ -276,13 +355,16 @@ footer a { color: var(--ink-2); }
           <div class="field"><label for="m-refCap">기준 시총 (조원)</label><input type="number" id="m-refCap" step="0.001" data-path="market.refCap"><span class="hint">6/11 유가증권시장</span></div>
         </div>
 
-        <div class="field"><label>업사이클 순이익 경로 (조원) · 회색 연도는 업사이클 밖</label></div>
+        <div class="field"><label>반도체 순이익 경로 (조원) · 회색 연도는 업사이클 밖</label></div>
         <div class="epath" id="epath"></div>
+
+        <div class="fixed-note"><label for="b-NS"><b>비반도체 이익 (고정)</b></label> — 업사이클 기간과 정상 기간 모두 같은 값을 씁니다. 시나리오는 이 값을 바꾸지 않습니다.
+          <div class="fields" style="margin-top:8px"><div class="field"><input type="number" id="b-NS" step="5" data-path="base.NS"><span class="hint">조원/년 · 원래 모델 정상 이익 300 · iM 2027 추정 334.8</span></div></div>
+        </div>
 
         <div class="fields">
           <div class="field"><label for="b-N">업사이클 연수 N</label><input type="number" id="b-N" min="1" max="5" step="1" data-path="base.N"><span class="hint">1~5년</span></div>
           <div class="field"><label for="b-semi">반도체 정상 이익</label><input type="number" id="b-semi" step="5" data-path="base.semi"><span class="hint">조원/년</span></div>
-          <div class="field"><label for="b-oth">비반도체 정상 이익</label><input type="number" id="b-oth" step="5" data-path="base.oth"><span class="hint">조원/년</span></div>
           <div class="field"><label for="b-per">정상 PER</label><input type="number" id="b-per" step="0.5" data-path="base.per"><span class="hint">배 · 20년 평균 10</span></div>
           <div class="field"><label for="b-ktb">국고채 10년 (%)</label><input type="number" id="b-ktb" step="0.05" data-path="base.ktb"><span class="hint">11/3 종가 4.00</span></div>
           <div class="field"><label for="b-erp">주식 위험 프리미엄 (%p)</label><input type="number" id="b-erp" step="0.25" data-path="base.erp"><span class="hint">r = 국고 10년 + ERP</span></div>
@@ -295,7 +377,6 @@ footer a { color: var(--ink-2); }
     </div>
 
     <div class="stack">
-      <!-- 반사성 -->
       <section class="card">
         <div class="card-h"><h2>반사성 파라미터</h2><span class="small num" id="mval"></span></div>
         <div class="fields">
@@ -303,13 +384,12 @@ footer a { color: var(--ink-2); }
           <div class="field"><label for="r-psi">ψ 증폭</label><input type="number" id="r-psi" step="0.01" data-path="reflex.psi"><span class="hint">주가 ↑ → 외국인 유입·부의 효과 → 멀티플 ↑</span></div>
           <div class="field"><label for="r-kappa">κ 오버슈팅 (%)</label><input type="number" id="r-kappa" step="5" data-path="reflex.kappa"><span class="hint">포지션 쏠림</span></div>
         </div>
-        <p class="small">m = 1 / (1 + φ − ψ). Δ는 각 내러티브의 DCF 값에서 베이스 모델을 뺀 값입니다.</p>
+        <p class="small">m = 1 / (1 + φ − ψ). Δ는 각 시나리오의 DCF 값에서 베이스 모델을 뺀 값입니다.</p>
       </section>
 
-      <!-- 역산 -->
       <section class="card">
-        <div class="card-h"><h2>역산: 현재 시총이 반영하는 미래</h2></div>
-        <p class="small">베이스 이익 경로·PER·할인율을 둔 채, 현재 시가총액을 정당화하는 정상 이익을 업사이클 연수별로 풉니다.</p>
+        <div class="card-h"><h2>역산: 현재 지수가 반영하는 미래</h2></div>
+        <p class="small">베이스 반도체 이익 경로·PER·할인율과 비반도체 고정값을 둔 채, 현재 시가총액을 정당화하는 반도체 정상 이익을 업사이클 연수별로 풉니다.</p>
         <div class="scroll"><table class="kv" id="implied"></table></div>
         <p class="small" id="impliedNote"></p>
       </section>
@@ -319,50 +399,44 @@ footer a { color: var(--ink-2); }
   <!-- 내러티브 표 -->
   <section class="card">
     <div class="card-h">
-      <h2>내러티브</h2>
+      <h2>시나리오 입력</h2>
       <div class="btns">
         <span class="psum" id="psum"></span>
-        <button type="button" id="addRow">내러티브 추가</button>
+        <button type="button" id="addRow">시나리오 추가</button>
         <button type="button" class="ghost" id="normP">확률 100%로 맞추기</button>
       </div>
     </div>
-    <p class="small">각 줄은 베이스 대비 변화량입니다. 이익 Δ는 연도별 비율(%), 2029 이후 열은 2029~2031년에 함께 적용됩니다.</p>
+    <p class="small">각 줄은 베이스 대비 변화량입니다. 반도체 이익 Δ는 연도별 비율(%)이고 2029+ 열은 2029~2031년에 함께 적용됩니다. 비반도체는 고정이라 입력 칸이 없습니다.</p>
     <div class="scroll">
       <table class="narr" id="narr">
         <thead>
           <tr>
-            <th rowspan="2">내러티브</th><th rowspan="2" class="n">확률 %</th>
-            <th colspan="3" class="grp sep">업사이클 이익 Δ%</th>
-            <th rowspan="2" class="n">ΔN 년</th>
-            <th colspan="2" class="grp">정상 이익 Δ조</th>
+            <th rowspan="2">시나리오</th><th rowspan="2" class="n">확률 %</th>
+            <th colspan="3" class="grp sep">반도체 이익 Δ%</th>
+            <th rowspan="2" class="n">ΔN 년</th><th rowspan="2" class="n">Δ반도체<br>정상 조</th>
             <th rowspan="2" class="n">ΔPER</th><th rowspan="2" class="n">Δr %p</th>
-            <th rowspan="2" class="n sep">DCF 값</th><th rowspan="2" class="n">반사성 적정</th><th rowspan="2" class="n">극단</th><th rowspan="2" class="n">현재 대비</th><th rowspan="2"></th>
+            <th rowspan="2" class="n sep">반사성 적정<br>지수 (시총)</th><th rowspan="2" class="n">극단<br>지수 (시총)</th><th rowspan="2" class="n">현재 대비</th><th rowspan="2"></th>
           </tr>
-          <tr>
-            <th class="n sep">2027</th><th class="n">2028</th><th class="n">2029+</th>
-            <th class="n">반도체</th><th class="n">비반도체</th>
-          </tr>
+          <tr><th class="n sep">2027</th><th class="n">2028</th><th class="n">2029+</th></tr>
         </thead>
         <tbody></tbody>
       </table>
     </div>
   </section>
 
-  <!-- 민감도 -->
   <div class="grid2">
     <section class="card">
-      <div class="card-h"><h2>민감도: 업사이클 연수 × 정상 이익</h2></div>
-      <p class="small">베이스 이익 경로·PER·할인율 고정. 셀 색은 현재 시총 대비 위(빨강)·아래(파랑). 테두리는 베이스.</p>
+      <div class="card-h"><h2>민감도: 업사이클 연수 × 반도체 정상 이익</h2></div>
+      <p class="small">적정 코스피 지수. 베이스 이익 경로·PER·할인율, 비반도체 고정. 셀 색은 현재 지수 대비 위(빨강)·아래(파랑). 테두리는 베이스.</p>
       <div class="scroll"><table class="heat" id="heat1"></table></div>
     </section>
     <section class="card">
       <div class="card-h"><h2>민감도: 할인율 × 정상 PER</h2></div>
-      <p class="small">베이스 시나리오 고정. 할인율은 국고 10년 + ERP 기준 ±2%p.</p>
+      <p class="small">적정 코스피 지수. 베이스 시나리오 고정. 할인율은 국고 10년 + ERP 기준 ±2%p.</p>
       <div class="scroll"><table class="heat" id="heat2"></table></div>
     </section>
   </div>
 
-  <!-- 지표 -->
   <section class="card">
     <div class="card-h">
       <h2>반사성 지표 · 반증 신호</h2>
@@ -377,7 +451,6 @@ footer a { color: var(--ink-2); }
     </div>
   </section>
 
-  <!-- 설정 JSON -->
   <section class="card">
     <div class="card-h">
       <h2>설정 JSON</h2>
@@ -396,26 +469,22 @@ footer a { color: var(--ink-2); }
     <details class="method">
       <summary>방법론과 한계</summary>
       <div class="method-body">
-        <p>PER = 시가총액 ÷ 예상 순이익입니다. 현재 이익이 과거 평균보다 이례적으로 높으면 PER이 낮게 나오는데, 이것은 싸다는 뜻이 아니라 분모가 일시적으로 부풀었다는 뜻일 수 있습니다. 그래서 업사이클 기간 이익과 사이클 이후 정상 이익을 나눠 추산한 뒤 현재가치로 할인합니다.</p>
-<pre>정상 이익 NE   = 반도체 정상 이익 + 비반도체 정상 이익
-터미널 가치 TV = NE × 정상 PER
-적정 시총 PV   = Σ E_t ÷ (1+r)^t  +  TV ÷ (1+r)^N
-단순법         = (Σ E_t + TV) ÷ (1+r)^N
-할인율 r       = 국고채 10년 + 주식 위험 프리미엄
+        <p>현재 이익이 과거 평균보다 이례적으로 높으면 PER이 낮게 나오는데, 이것은 싸다는 뜻이 아니라 분모가 일시적으로 부풀었다는 뜻일 수 있습니다. 그래서 업사이클 기간 이익과 사이클 이후 정상 이익을 나눠 추산한 뒤 현재가치로 할인합니다. 이 판에서는 사이클을 반도체에만 두고 비반도체 이익은 고정합니다.</p>
+<pre>연도별 이익 E_t   = 반도체 S_t + 비반도체 NS(고정)
+정상 이익 NE      = 반도체 정상 S̄ + NS
+적정 시총 PV      = Σ E_t ÷ (1+r)^t  +  NE·PER ÷ (1+r)^N
+적정 지수         = PV × 기준 지수 ÷ 기준 시총
+할인율 r          = 국고채 10년 + 주식 위험 프리미엄
 
-내러티브 값 V  = PV(베이스 + 내러티브 Δ)
-Δ              = V − PV(베이스)
-반사성 승수 m  = 1 / (1 + φ − ψ)
-반사성 적정    = PV(베이스) + m·Δ
-극단           = PV(베이스) + m·Δ·(1+κ)
-시장 내재 NE   = NE + ε ÷ (PER/(1+r)^N),   ε = 현재 시총 − PV(베이스)</pre>
+시나리오 값 V     = PV(베이스 + 시나리오 Δ)
+반사성 적정       = PV(베이스) + m·(V − PV(베이스)),   m = 1/(1 + φ − ψ)
+극단              = PV(베이스) + m·(V − PV(베이스))·(1+κ)</pre>
         <ul>
-          <li>시가총액은 6/11 지수-시가총액 비율로 환산한 값입니다. 신규 상장·상장 폐지를 반영하지 않아 KRX 공시값과 수십조 원 차이가 날 수 있습니다.</li>
-          <li>순이익을 모두 주주 몫으로 봅니다. 이익이 쌓이기만 하고 주주에게 돌아오지 않으면 적정가치는 표보다 낮습니다.</li>
-          <li>2028년 이후 이익과 정상 이익은 컨센서스가 아니라 가정입니다. 2030·2031년 경로는 업사이클이 길어지는 내러티브에서만 쓰입니다.</li>
-          <li>정상 PER 10배는 반도체 비중이 낮던 시절의 평균입니다.</li>
-          <li>ERP 6.0%p는 원래 모델의 할인율 10%에 맞춘 값입니다. 국고채 10년이 움직이면 할인율도 함께 움직입니다.</li>
-          <li>반사성 파라미터는 판단값입니다. 확률과 함께 분석자의 견해를 숫자로 적어 두는 장치로 쓰세요.</li>
+          <li>지수 환산은 6/11 지수-시가총액 비율을 씁니다. 신규 상장·상장 폐지를 반영하지 않습니다.</li>
+          <li>반도체 순이익은 투톱 영업이익에 세후 비율 약 0.78을 곱하고 기타 반도체주를 더한 근사값입니다.</li>
+          <li>비반도체 고정은 사용자가 반도체 사이클만 보겠다는 선택입니다. 실제로는 비관 국면에서 비반도체도 함께 꺾일 수 있어 하방이 과소평가될 수 있습니다.</li>
+          <li>순이익을 모두 주주 몫으로 봅니다. 정상 PER 10배는 반도체 비중이 낮던 시절의 평균입니다.</li>
+          <li>ERP 6.0%p는 원래 모델의 할인율 10%에 맞춘 값입니다.</li>
         </ul>
       </div>
     </details>
@@ -426,9 +495,15 @@ footer a { color: var(--ink-2); }
     <p>출처:
       <a href="https://news.mtn.co.kr/article/2026111315370634191" target="_blank" rel="noopener">MTN 11/13 마감시황</a> ·
       <a href="https://brunch.co.kr/@kid008/1165" target="_blank" rel="noopener">6/11 유가증권시장 시가총액</a> ·
-      <a href="https://news.bizwatch.co.kr/article/market/2026/11/10/0006" target="_blank" rel="noopener">메리츠 2027 순이익 1,125조</a> ·
-      <a href="https://www.heraldk.com/article/2026081319245487901" target="_blank" rel="noopener">삼전닉스 영업이익 컨센서스</a> ·
+      <a href="https://news.bizwatch.co.kr/article/market/2026/11/10/0006" target="_blank" rel="noopener">메리츠 2027 전망</a> ·
+      <a href="https://www.heraldk.com/article/2026081319245487901" target="_blank" rel="noopener">에프앤가이드 투톱 컨센서스</a> ·
       <a href="https://www.fnnews.com/news/202607091500146592" target="_blank" rel="noopener">2028년 이익 둔화 전망</a> ·
+      <a href="https://www.ddaily.co.kr/page/view/2026111713555025566" target="_blank" rel="noopener">키움 목표가 하향 (11/17)</a> ·
+      <a href="https://www.ajunews.com/view/20261110133156115" target="_blank" rel="noopener">모건스탠리 목표가 하향 (11/10)</a> ·
+      <a href="http://www.press9.kr/news/articleView.html?idxno=85526" target="_blank" rel="noopener">KB 2027 투톱 1,111조</a> ·
+      <a href="https://www.newsspace.kr/news/article.html?no=14151" target="_blank" rel="noopener">골드만 2028 전망</a> ·
+      <a href="https://www.pinpointnews.co.kr/news/articleView.html?idxno=504108" target="_blank" rel="noopener">iM 2027 반도체·비반도체</a> ·
+      <a href="https://www.trendforce.com/presscenter/news/20260709-13140.html" target="_blank" rel="noopener">트렌드포스 D램 가격</a> ·
       <a href="https://www.dailian.co.kr/news/view/1713779" target="_blank" rel="noopener">초과이익 유효기간 1.4년</a>
     </p>
   </footer>
@@ -439,16 +514,16 @@ footer a { color: var(--ink-2); }
 <script>
 (function () {
   "use strict";
-  var STORE = "kospi-cycle-dcf-v1";
+  var STORE = "kospi-cycle-dcf-v2";
   var YEARS = [2027, 2028, 2029, 2030, 2031];
   var DEFAULT = JSON.parse(document.getElementById("config").textContent);
   var state = load() || clone(DEFAULT);
+  var sel = 2;
+  try { var sv = Number(localStorage.getItem(STORE + "-sel")); if (isFinite(sv)) sel = sv; } catch (e) {}
 
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
-  function load() {
-    try { var s = localStorage.getItem(STORE); return s ? normalize(JSON.parse(s)) : null; } catch (e) { return null; }
-  }
-  function save() { try { localStorage.setItem(STORE, JSON.stringify(state)); } catch (e) {} }
+  function load() { try { var s = localStorage.getItem(STORE); return s ? normalize(JSON.parse(s)) : null; } catch (e) { return null; } }
+  function save() { try { localStorage.setItem(STORE, JSON.stringify(state)); localStorage.setItem(STORE + "-sel", String(sel)); } catch (e) {} }
   function normalize(s) {
     var d = clone(DEFAULT);
     if (!s || typeof s !== "object") return null;
@@ -456,50 +531,58 @@ footer a { color: var(--ink-2); }
     if (Array.isArray(s.narratives)) d.narratives = s.narratives;
     if (Array.isArray(s.indicators)) d.indicators = s.indicators;
     if (s.asOf) d.asOf = s.asOf;
-    while (d.base.E.length < 5) d.base.E.push(d.base.E[d.base.E.length - 1] || 0);
+    if (!Array.isArray(d.base.S)) d.base.S = clone(DEFAULT.base.S);
+    while (d.base.S.length < 5) d.base.S.push(d.base.S[d.base.S.length - 1] || 0);
     return d;
   }
 
   /* ---------- 계산 ---------- */
   var num = function (v, f) { v = Number(v); return isFinite(v) ? v : (f || 0); };
-  function marketCap() { var m = state.market; return num(m.index) * num(m.refCap) / (num(m.refIndex) || 1); }
+  function ratio() { var m = state.market; return num(m.refIndex) / (num(m.refCap) || 1); }
+  function toIdx(v) { return v * ratio(); }
+  function marketCap() { return num(state.market.index) / ratio(); }
   function baseRate() { return (num(state.base.ktb) + num(state.base.erp)) / 100; }
   function clampN(n) { return Math.max(1, Math.min(5, Math.round(n))); }
 
-  function pv(E, N, NE, per, r) {
-    var pe = 0, sumE = 0;
-    for (var t = 0; t < N; t++) { pe += E[t] / Math.pow(1 + r, t + 1); sumE += E[t]; }
-    var tv = NE * per, d = Math.pow(1 + r, N);
-    return { pe: pe, tv: tv, pvtv: tv / d, total: pe + tv / d, simple: (sumE + tv) / d };
+  // inputs: {S[], NS, N, semi, per, r}
+  function pv(i) {
+    var pe = 0, sumE = 0, rows = [];
+    for (var t = 0; t < 5; t++) {
+      var e = i.S[t] + i.NS, df = 1 / Math.pow(1 + i.r, t + 1), inC = t < i.N;
+      rows.push({ y: YEARS[t], S: i.S[t], NS: i.NS, E: e, df: df, pv: inC ? e * df : 0, inC: inC });
+      if (inC) { pe += e * df; sumE += e; }
+    }
+    var NE = i.semi + i.NS, tv = NE * i.per, d = Math.pow(1 + i.r, i.N);
+    return { pe: pe, NE: NE, tv: tv, pvtv: tv / d, total: pe + tv / d, simple: (sumE + tv) / d, rows: rows };
   }
   function baseInputs() {
     var b = state.base;
-    return { E: b.E.map(num), N: clampN(num(b.N, 3)), semi: num(b.semi), oth: num(b.oth), per: num(b.per), r: baseRate() };
+    return { S: b.S.map(num), NS: num(b.NS), N: clampN(num(b.N, 3)), semi: num(b.semi), per: num(b.per), r: baseRate() };
   }
   function narrInputs(x) {
     var b = baseInputs();
-    var E = b.E.map(function (e, i) {
-      var d = i === 0 ? x.dE27 : i === 1 ? x.dE28 : x.dE29;
-      return e * (1 + num(d) / 100);
-    });
-    return { E: E, N: clampN(b.N + num(x.dN)), semi: b.semi + num(x.dSemi), oth: b.oth + num(x.dOth), per: b.per + num(x.dPer), r: b.r + num(x.dR) / 100 };
+    return {
+      S: b.S.map(function (e, i) { return e * (1 + num(i === 0 ? x.dS27 : i === 1 ? x.dS28 : x.dS29) / 100); }),
+      NS: b.NS, N: clampN(b.N + num(x.dN)), semi: b.semi + num(x.dSemi), per: b.per + num(x.dPer), r: b.r + num(x.dR) / 100
+    };
   }
-  function run(i) { return pv(i.E, i.N, i.semi + i.oth, i.per, i.r); }
 
   function compute() {
-    var MC = marketCap(), bi = baseInputs(), B = run(bi);
+    var MC = marketCap(), bi = baseInputs(), B = pv(bi);
     var rf = state.reflex, m = 1 / (1 + num(rf.phi) - num(rf.psi)), k = num(rf.kappa) / 100;
     var rows = state.narratives.map(function (x) {
-      var V = run(narrInputs(x)).total, D = V - B.total;
-      return { x: x, p: Math.max(0, num(x.p)), V: V, adj: B.total + m * D, ext: B.total + m * D * (1 + k) };
+      var ni = narrInputs(x), R = pv(ni), D = R.total - B.total;
+      return { x: x, ni: ni, R: R, p: Math.max(0, num(x.p)), V: R.total, adj: B.total + m * D, ext: B.total + m * D * (1 + k) };
     });
     var ps = rows.reduce(function (a, r) { return a + r.p; }, 0);
     var w = ps > 0 ? rows.reduce(function (a, r) { return a + r.p * r.adj; }, 0) / ps : B.total;
     var hi = rows.length ? Math.max.apply(null, rows.map(function (r) { return r.ext; })) : B.total;
     var lo = rows.length ? Math.min.apply(null, rows.map(function (r) { return r.ext; })) : B.total;
     var implied = [1, 2, 3, 4, 5].map(function (N) {
-      var pe = pv(bi.E, N, 0, 0, bi.r).pe;
-      return { N: N, ne: (MC - pe) * Math.pow(1 + bi.r, N) / (bi.per || 1) };
+      var pe = 0;
+      for (var t = 0; t < N; t++) pe += (bi.S[t] + bi.NS) / Math.pow(1 + bi.r, t + 1);
+      var ne = (MC - pe) * Math.pow(1 + bi.r, N) / (bi.per || 1);
+      return { N: N, ne: ne, semi: ne - bi.NS };
     });
     return { MC: MC, bi: bi, B: B, m: m, k: k, rows: rows, ps: ps, w: w, hi: hi, lo: lo, implied: implied };
   }
@@ -508,125 +591,104 @@ footer a { color: var(--ink-2); }
   var nf0 = new Intl.NumberFormat("ko-KR", { maximumFractionDigits: 0 });
   var nf1 = new Intl.NumberFormat("ko-KR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
   var nf2 = new Intl.NumberFormat("ko-KR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  function jo(v) { return nf0.format(Math.round(v)); }
+  function jo(v) { return (v < 0 ? "−" : "") + nf0.format(Math.abs(Math.round(v))); }
+  function ix(v) { return nf0.format(Math.round(toIdx(v))); }
   function pct(v) { return (v >= 0 ? "+" : "−") + nf1.format(Math.abs(v * 100)) + "%"; }
+  function sgn(v, f) { return (v > 0 ? "+" : v < 0 ? "−" : "±") + (f || nf0).format(Math.abs(v)); }
   function cls(v, ref) { return v > ref * 1.0005 ? "up" : v < ref * 0.9995 ? "down" : ""; }
-  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
 
   /* ---------- 렌더 ---------- */
-  function renderAll() {
-    bindFields();
-    renderEPath();
-    renderNarrTable();
-    renderIndTable();
-    update();
-  }
-
+  function renderAll() { bindFields(); renderEPath(); renderNarrTable(); renderIndTable(); update(); }
   function getPath(p) { return p.split(".").reduce(function (o, k) { return o[k]; }, state); }
-  function setPath(p, v) {
-    var ks = p.split("."), o = state;
-    for (var i = 0; i < ks.length - 1; i++) o = o[ks[i]];
-    o[ks[ks.length - 1]] = v;
-  }
-  function bindFields() {
-    document.querySelectorAll("[data-path]").forEach(function (el) { el.value = getPath(el.dataset.path); });
-  }
+  function setPath(p, v) { var ks = p.split("."), o = state; for (var i = 0; i < ks.length - 1; i++) o = o[ks[i]]; o[ks[ks.length - 1]] = v; }
+  function bindFields() { document.querySelectorAll("[data-path]").forEach(function (el) { el.value = getPath(el.dataset.path); }); }
 
   function renderEPath() {
-    var box = document.getElementById("epath");
-    box.innerHTML = YEARS.map(function (y, i) {
-      return '<div class="field"><label for="e-' + i + '">' + y + '</label><input type="number" id="e-' + i + '" step="5" data-e="' + i + '" value="' + state.base.E[i] + '"></div>';
+    document.getElementById("epath").innerHTML = YEARS.map(function (y, i) {
+      return '<div class="field"><label for="e-' + i + '">' + y + '</label><input type="number" id="e-' + i + '" step="5" data-e="' + i + '" value="' + state.base.S[i] + '"></div>';
     }).join("");
   }
 
-  function narrCell(i, key, step) {
-    return '<td class="n"><input type="number" step="' + step + '" id="n' + i + '-' + key + '" data-row="' + i + '" data-key="' + key + '" value="' + esc(state.narratives[i][key]) + '" aria-label="' + key + '"></td>';
+  function narrCell(i, key, step, extra) {
+    return '<td class="n' + (extra || "") + '"><input type="number" step="' + step + '" id="n' + i + '-' + key + '" data-row="' + i + '" data-key="' + key + '" value="' + esc(state.narratives[i][key]) + '" aria-label="' + key + '"></td>';
   }
   function renderNarrTable() {
-    var tb = document.querySelector("#narr tbody");
-    tb.innerHTML = state.narratives.map(function (x, i) {
-      return "<tr>" +
-        '<td><input type="text" id="n' + i + '-name" data-row="' + i + '" data-key="name" value="' + esc(x.name) + '" aria-label="내러티브 이름"></td>' +
-        narrCell(i, "p", 5) +
-        narrCell(i, "dE27", 1).replace('class="n"', 'class="n sep"') + narrCell(i, "dE28", 1) + narrCell(i, "dE29", 1) +
-        narrCell(i, "dN", 1) + narrCell(i, "dSemi", 10) + narrCell(i, "dOth", 10) + narrCell(i, "dPer", 0.5) + narrCell(i, "dR", 0.25) +
-        '<td class="out sep" id="o' + i + '-V"></td><td class="out" id="o' + i + '-adj"></td><td class="out" id="o' + i + '-ext"></td><td class="out" id="o' + i + '-pct"></td>' +
-        '<td><button type="button" class="x" data-del="' + i + '" aria-label="삭제">삭제</button></td>' +
-        "</tr>";
+    if (sel >= state.narratives.length) sel = Math.max(0, state.narratives.length - 1);
+    document.querySelector("#narr tbody").innerHTML = state.narratives.map(function (x, i) {
+      return '<tr data-sel="' + i + '"' + (i === sel ? ' class="sel"' : "") + ">" +
+        '<td><input type="text" id="n' + i + '-name" data-row="' + i + '" data-key="name" value="' + esc(x.name) + '" aria-label="시나리오 이름"></td>' +
+        narrCell(i, "p", 5) + narrCell(i, "dS27", 1, " sep") + narrCell(i, "dS28", 1) + narrCell(i, "dS29", 1) +
+        narrCell(i, "dN", 1) + narrCell(i, "dSemi", 10) + narrCell(i, "dPer", 0.5) + narrCell(i, "dR", 0.25) +
+        '<td class="out sep" id="o' + i + '-adj"></td><td class="out" id="o' + i + '-ext"></td><td class="out" id="o' + i + '-pct"></td>' +
+        '<td><button type="button" class="x" data-del="' + i + '" aria-label="삭제">삭제</button></td></tr>';
     }).join("");
   }
 
-  var OPS = ["<", "<=", ">", ">="];
-  var OPL = { "<": "<", "<=": "≤", ">": ">", ">=": "≥" };
+  var OPS = ["<", "<=", ">", ">="], OPL = { "<": "<", "<=": "≤", ">": ">", ">=": "≥" };
   function renderIndTable() {
-    var tb = document.querySelector("#ind tbody");
-    tb.innerHTML = state.indicators.map(function (x, i) {
+    document.querySelector("#ind tbody").innerHTML = state.indicators.map(function (x, i) {
       var val = x.auto ? '<span class="num" id="iv' + i + '"></span>' :
         '<input type="number" step="0.1" id="i' + i + '-value" data-ind="' + i + '" data-key="value" value="' + (x.value == null ? "" : esc(x.value)) + '" aria-label="현재 값">';
       var op = '<select id="i' + i + '-op" data-ind="' + i + '" data-key="op" aria-label="조건">' + OPS.map(function (o) { return '<option value="' + o + '"' + (o === x.op ? " selected" : "") + ">" + OPL[o] + "</option>"; }).join("") + "</select> " +
         '<input type="number" step="0.1" id="i' + i + '-th" data-ind="' + i + '" data-key="th" value="' + esc(x.th) + '" aria-label="기준값">';
-      var dir = '<select id="i' + i + '-dir" data-ind="' + i + '" data-key="dir" aria-label="방향"><option value="up"' + (x.dir === "up" ? " selected" : "") + '>시총 ↑</option><option value="down"' + (x.dir === "down" ? " selected" : "") + ">시총 ↓</option></select>";
-      return "<tr><td>" + esc(x.name) + '</td><td class="n">' + val + "</td><td>" + op + "</td><td>" + dir + '</td><td id="is' + i + '"></td><td class="small">' + esc(x.note || "") + "</td></tr>";
+      var dir = '<select id="i' + i + '-dir" data-ind="' + i + '" data-key="dir" aria-label="방향"><option value="up"' + (x.dir === "up" ? " selected" : "") + '>지수 ↑</option><option value="down"' + (x.dir === "down" ? " selected" : "") + ">지수 ↓</option></select>";
+      return "<tr><td>" + esc(x.name) + '</td><td class="n">' + val + "</td><td>" + op + "</td><td>" + dir + '</td><td id="is' + i + '"></td><td class="small" style="white-space:normal;min-width:220px">' + esc(x.note || "") + "</td></tr>";
     }).join("");
   }
+
+  function idxCell(v, MC) { return ix(v) + '<span class="mc">(' + jo(v) + "조)</span>"; }
 
   function update() {
     var c = compute();
     document.getElementById("asof").textContent = state.asOf || "";
 
-    // 결과 띠
     var tiles = [
-      { k: "현재 시가총액", v: c.MC, d: "지수 " + nf2.format(num(state.market.index)) },
-      { k: "베이스 모델", v: c.B.total, d: pct(c.B.total / c.MC - 1), dc: cls(c.B.total, c.MC) },
-      { k: "확률가중 적정", v: c.w, d: pct(c.w / c.MC - 1), dc: cls(c.w, c.MC), hl: true },
-      { k: "상방 극단", v: c.hi, d: pct(c.hi / c.MC - 1), dc: cls(c.hi, c.MC) },
-      { k: "하방 극단", v: c.lo, d: pct(c.lo / c.MC - 1), dc: cls(c.lo, c.MC) }
+      { k: "현재 코스피", v: c.MC, d: "", cur: true },
+      { k: "베이스 모델", v: c.B.total },
+      { k: "확률가중 적정", v: c.w, hl: true },
+      { k: "상방 극단", v: c.hi },
+      { k: "하방 극단", v: c.lo }
     ];
     document.getElementById("tiles").innerHTML = tiles.map(function (t) {
-      return '<div class="tile' + (t.hl ? " hl" : "") + '"><span class="k">' + t.k + '</span><span class="v">' + jo(t.v) + '<small>조</small></span><span class="d ' + (t.dc || "") + '">' + t.d + "</span></div>";
+      var main = t.cur ? nf2.format(num(state.market.index)) : ix(t.v);
+      var d = t.cur ? "11/13 종가" : pct(t.v / c.MC - 1);
+      return '<div class="tile' + (t.hl ? " hl" : "") + '"><span class="k">' + t.k + '</span><span class="v">' + main + '<small>pt</small></span>' +
+        '<span class="mc">(' + jo(t.v) + '조)</span><span class="d ' + (t.cur ? "small" : cls(t.v, c.MC)) + '">' + d + "</span></div>";
     }).join("");
-    var bN = c.bi.N, imp = c.implied[bN - 1].ne, NE = c.bi.semi + c.bi.oth;
+    var bN = c.bi.N, imp = c.implied[bN - 1];
     document.getElementById("notes").innerHTML =
       "<span>할인율 r <b>" + nf2.format(c.bi.r * 100) + "%</b></span>" +
       "<span>반사성 승수 m <b>" + nf2.format(c.m) + "×</b></span>" +
-      "<span>시장 − 모델 ε <b>" + (c.MC - c.B.total >= 0 ? "+" : "−") + jo(Math.abs(c.MC - c.B.total)) + "조</b></span>" +
-      "<span>시장 내재 정상 이익 (N=" + bN + ") <b>" + jo(imp) + "조</b> · 모델 " + jo(NE) + "조</span>";
+      "<span>비반도체 고정 <b>" + jo(c.bi.NS) + "조</b></span>" +
+      "<span>시장 내재 반도체 정상 이익 (N=" + bN + ") <b>" + jo(imp.semi) + "조</b> · 모델 " + jo(c.bi.semi) + "조</span>";
 
-    // 기준 결과표
     var B = c.B;
-    document.getElementById("basekv").innerHTML =
-      "<tbody>" +
-      row(bN + "년 이익의 현재가치", B.pe) +
-      row("정상 이익 NE", NE) +
-      row("터미널 가치 (NE × " + nf1.format(c.bi.per) + "배)", B.tv) +
-      row("터미널 가치의 현재가치", B.pvtv) +
-      '<tr class="total"><td>적정 시가총액 (연도별 할인)</td><td class="n">' + jo(B.total) + '조</td><td class="n ' + cls(B.total, c.MC) + '">' + pct(B.total / c.MC - 1) + "</td></tr>" +
-      row("참고: 단순법", B.simple, pct(B.simple / c.MC - 1)) +
-      row("적정가치 중 터미널 비중", null, nf0.format(B.pvtv / B.total * 100) + "%") +
-      "</tbody>";
-    function row(k, v, extra) {
-      return "<tr><td>" + k + '</td><td class="n">' + (v == null ? "" : jo(v) + "조") + '</td><td class="n small">' + (extra || "") + "</td></tr>";
-    }
+    document.getElementById("basekv").innerHTML = "<tbody>" +
+      row(bN + "년 이익의 현재가치", jo(B.pe) + "조") +
+      row("정상 이익 (반도체 " + jo(c.bi.semi) + " + 비반도체 " + jo(c.bi.NS) + ")", jo(B.NE) + "조") +
+      row("터미널 가치 (× " + nf1.format(c.bi.per) + "배)", jo(B.tv) + "조") +
+      row("터미널 가치의 현재가치", jo(B.pvtv) + "조") +
+      '<tr class="total"><td>적정 코스피 (연도별 할인)</td><td class="n">' + ix(B.total) + ' <span class="mc">(' + jo(B.total) + '조)</span></td><td class="n ' + cls(B.total, c.MC) + '">' + pct(B.total / c.MC - 1) + "</td></tr>" +
+      row("참고: 단순법", ix(B.simple) + ' <span class="mc">(' + jo(B.simple) + "조)</span>", pct(B.simple / c.MC - 1)) +
+      row("적정가치 중 터미널 비중", "", nf0.format(B.pvtv / B.total * 100) + "%") + "</tbody>";
+    function row(k, v, extra) { return "<tr><td>" + k + '</td><td class="n">' + v + '</td><td class="n small">' + (extra || "") + "</td></tr>"; }
     document.querySelectorAll("#epath .field").forEach(function (f, i) { f.classList.toggle("off", i >= bN); });
-
     document.getElementById("mval").textContent = "m = " + nf2.format(c.m) + "×";
 
-    // 역산
     document.getElementById("implied").innerHTML =
-      '<thead><tr><th>업사이클 지속</th><th class="n">반영된 정상 이익</th><th class="n">모델 대비</th></tr></thead><tbody>' +
+      '<thead><tr><th>업사이클 지속</th><th class="n">정상 이익 합계</th><th class="n">반도체 몫</th><th class="n">모델 반도체</th></tr></thead><tbody>' +
       c.implied.map(function (r) {
-        return "<tr" + (r.N === bN ? ' style="font-weight:600"' : "") + "><td>" + r.N + "년 (" + YEARS[r.N - 1] + "년까지)</td><td class=\"n\">" + jo(r.ne) + '조</td><td class="n ' + cls(r.ne, NE) + '">' + pct(r.ne / NE - 1) + "</td></tr>";
+        return "<tr" + (r.N === bN ? ' style="font-weight:600"' : "") + "><td>" + r.N + "년 (" + YEARS[r.N - 1] + "년까지)</td><td class=\"n\">" + jo(r.ne) + '조</td><td class="n ' + cls(r.semi, c.bi.semi) + '">' + jo(r.semi) + '조</td><td class="n small">' + jo(c.bi.semi) + "조</td></tr>";
       }).join("") + "</tbody>";
-    var I = c.implied, near = I.slice().sort(function (a, b) { return Math.abs(a.ne - NE) - Math.abs(b.ne - NE); })[0];
-    document.getElementById("impliedNote").textContent = I[0].ne < NE
-      ? "업사이클이 1년(2027년)에 끝나도 현재 가격이 반영하는 정상 이익은 " + jo(I[0].ne) + "조로 모델값 " + jo(NE) + "조보다 낮습니다. 2년이면 " + jo(I[1].ne) + "조, 3년이면 " + jo(I[2].ne) + "조입니다. 현재 가격은 사이클 단축과 정상 이익 하락을 함께 반영합니다."
-      : "정상 이익 " + jo(NE) + "조를 지킨다면, 현재 가격은 업사이클이 약 " + near.N + "년(" + YEARS[near.N - 1] + "년까지)인 미래와 가장 가깝습니다.";
+    var I = c.implied, near = I.slice().sort(function (a, b) { return Math.abs(a.semi - c.bi.semi) - Math.abs(b.semi - c.bi.semi); })[0];
+    document.getElementById("impliedNote").textContent = I[0].semi < c.bi.semi
+      ? "업사이클이 1년(2027년)에 끝나도 현재 지수가 반영하는 반도체 정상 이익은 " + jo(I[0].semi) + "조로 모델값 " + jo(c.bi.semi) + "조보다 낮습니다. 비반도체 " + jo(c.bi.NS) + "조를 고정하면, 현재 가격은 사이클 단축과 반도체 정상 이익 붕괴를 함께 반영합니다." + (I[bN - 1].semi < 0 ? " N=" + bN + "에서 반도체 몫이 음수라는 것은 비반도체 고정값 자체도 시장이 믿지 않는다는 뜻입니다." : "")
+      : "반도체 정상 이익 " + jo(c.bi.semi) + "조를 지킨다면, 현재 지수는 업사이클이 약 " + near.N + "년(" + YEARS[near.N - 1] + "년까지)인 미래와 가장 가깝습니다.";
 
-    // 내러티브 결과
     c.rows.forEach(function (r, i) {
-      setText("o" + i + "-V", jo(r.V));
-      setText("o" + i + "-adj", jo(r.adj));
-      setText("o" + i + "-ext", jo(r.ext));
+      var a = document.getElementById("o" + i + "-adj"); if (a) a.innerHTML = idxCell(r.adj);
+      var e = document.getElementById("o" + i + "-ext"); if (e) e.innerHTML = idxCell(r.ext);
       var el = document.getElementById("o" + i + "-pct");
       if (el) { el.textContent = pct(r.adj / c.MC - 1); el.className = "out " + cls(r.adj, c.MC); }
     });
@@ -634,149 +696,189 @@ footer a { color: var(--ink-2); }
     ps.textContent = "확률 합계 " + nf0.format(c.ps) + "%";
     ps.className = "psum" + (Math.abs(c.ps - 100) > 0.01 ? " bad" : "");
 
+    renderChips(c);
+    renderDetail(c);
     renderChart(c);
     renderHeat(c);
     updateInd(c);
     document.getElementById("json").value = JSON.stringify(state, null, 2);
     save();
   }
-  function setText(id, t) { var el = document.getElementById(id); if (el) el.textContent = t; }
 
-  /* ---------- 차트 ---------- */
-  function niceStep(span) {
-    var raw = span / 6, p = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / p;
-    return (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10) * p;
+  /* ---------- 시나리오 가정 ---------- */
+  function renderChips(c) {
+    document.getElementById("chips").innerHTML = c.rows.map(function (r, i) {
+      return '<button type="button" class="chip" data-pick="' + i + '" aria-pressed="' + (i === sel) + '">' + esc(r.x.name) + ' <span class="num">' + nf0.format(r.p) + "%</span></button>";
+    }).join("");
   }
+  function renderDetail(c) {
+    var box = document.getElementById("detail"), r = c.rows[sel];
+    if (!r) { box.innerHTML = '<p class="small">시나리오가 없습니다. 아래 표에서 시나리오를 추가하세요.</p>'; return; }
+    var x = r.x, bi = c.bi, ni = r.ni, R = r.R, B = c.B;
+    var ds = [];
+    function add(lbl, v, unit, f) { if (num(v) !== 0) ds.push('<span class="delta">' + lbl + " " + sgn(num(v), f) + unit + "</span>"); }
+    add("반도체 이익 2027", x.dS27, "%", nf1); add("2028", x.dS28, "%", nf1); add("2029+", x.dS29, "%", nf1);
+    add("업사이클", x.dN, "년"); add("반도체 정상 이익", x.dSemi, "조"); add("PER", x.dPer, "배", nf1); add("할인율", x.dR, "%p", nf2);
+    var deltas = ds.length ? ds.join("") : '<span class="delta none">베이스와 같음 (변화 없음)</span>';
+
+    var yr = '<table class="kv yr"><thead><tr><th>연도</th>' + R.rows.map(function (q) { return '<th class="n' + (q.inC ? "" : " off") + '">' + q.y + "</th>"; }).join("") + "</tr></thead><tbody>" +
+      '<tr><td>반도체</td>' + R.rows.map(function (q, t) { var ch = Math.abs(q.S - bi.S[t]) > 0.05; return '<td class="n' + (q.inC ? "" : " off") + (ch && q.inC ? " chg " + cls(q.S, bi.S[t]) : "") + '">' + jo(q.S) + "</td>"; }).join("") + "</tr>" +
+      '<tr><td>비반도체 (고정)</td>' + R.rows.map(function (q) { return '<td class="n' + (q.inC ? "" : " off") + '">' + jo(q.NS) + "</td>"; }).join("") + "</tr>" +
+      '<tr><td>합계</td>' + R.rows.map(function (q) { return '<td class="n' + (q.inC ? "" : " off") + '">' + jo(q.E) + "</td>"; }).join("") + "</tr>" +
+      '<tr><td>현재가치</td>' + R.rows.map(function (q) { return '<td class="n' + (q.inC ? "" : " off") + '">' + (q.inC ? jo(q.pv) : "—") + "</td>"; }).join("") + "</tr></tbody></table>";
+
+    function pr(k, bv, nv, fmt, unit) {
+      var ch = Math.abs(nv - bv) > 1e-9;
+      return "<tr><td>" + k + '</td><td class="n small">' + fmt(bv) + unit + '</td><td class="n' + (ch ? " chg " + cls(nv, bv) : "") + '">' + fmt(nv) + unit + "</td></tr>";
+    }
+    var f1 = function (v) { return nf1.format(v); }, f2 = function (v) { return nf2.format(v); }, f0 = function (v) { return nf0.format(v); };
+    var params = '<table class="kv yr"><thead><tr><th>가정</th><th class="n">베이스</th><th class="n">이 시나리오</th></tr></thead><tbody>' +
+      pr("업사이클 연수", bi.N, ni.N, f0, "년") +
+      pr("반도체 정상 이익", bi.semi, ni.semi, jo, "조") +
+      pr("비반도체 (고정)", bi.NS, ni.NS, jo, "조") +
+      pr("정상 PER", bi.per, ni.per, f1, "배") +
+      pr("할인율", bi.r * 100, ni.r * 100, f2, "%") +
+      pr("업사이클 이익 현재가치", B.pe, R.pe, jo, "조") +
+      pr("터미널 가치 현재가치", B.pvtv, R.pvtv, jo, "조") +
+      "</tbody></table>";
+
+    box.innerHTML =
+      '<div style="display:grid;gap:12px;min-width:0">' +
+        "<h3>" + esc(x.name) + ' <span class="small">· 확률 ' + nf0.format(r.p) + "%</span></h3>" +
+        '<p class="desc">' + esc(x.desc || "설명이 없습니다. 설정 JSON의 desc 항목에 적으면 여기에 표시됩니다.") + "</p>" +
+        '<div class="delta-list">' + deltas + "</div>" +
+        '<div class="result-big"><span class="small">DCF 값</span><span class="v">' + ix(r.V) + '<small>pt</small></span><span class="mc">(' + jo(r.V) + "조)</span></div>" +
+        '<div class="result-big"><span class="small">반사성 적정</span><span class="v ' + cls(r.adj, c.MC) + '">' + ix(r.adj) + '<small>pt</small></span><span class="mc">(' + jo(r.adj) + "조)</span>" +
+          '<span class="num ' + cls(r.adj, c.MC) + '">' + pct(r.adj / c.MC - 1) + '</span><span class="small">극단 ' + ix(r.ext) + "pt (" + jo(r.ext) + "조)</span></div>" +
+      "</div>" +
+      '<div style="display:grid;gap:12px;min-width:0"><div class="scroll">' + yr + '</div><div class="scroll">' + params + "</div>" +
+      '<p class="small">단위: 조원. 굵은 값은 베이스와 다른 가정, 회색 연도는 업사이클 밖입니다.</p></div>';
+  }
+  function pick(i) {
+    sel = i;
+    document.querySelectorAll("#narr tbody tr").forEach(function (tr, j) { tr.classList.toggle("sel", j === i); });
+    update();
+  }
+  document.getElementById("chips").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-pick]"); if (b) pick(+b.getAttribute("data-pick"));
+  });
+
+  /* ---------- 차트 (지수 축) ---------- */
+  function niceStep(span) { var raw = span / 6, p = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / p; return (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10) * p; }
   function renderChart(c) {
-    var rows = c.rows;
+    var rows = c.rows, R = ratio();
     var vals = [c.MC, c.B.total, c.w];
     rows.forEach(function (r) { vals.push(r.adj, r.ext); });
+    vals = vals.map(function (v) { return v * R; });
     var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals), pad = (hi - lo) * 0.06 || 200;
     lo -= pad; hi += pad;
     var step = niceStep(hi - lo);
     lo = Math.floor(lo / step) * step; hi = Math.ceil(hi / step) * step;
-
-    var W = 860, L = 230, R = 24, T = 50, RH = 38, H = T + rows.length * RH + 30;
-    var x = function (v) { return L + (v - lo) / (hi - lo) * (W - L - R); };
+    var W = 860, L = 230, Rm = 24, T = 50, RH = 38, H = T + rows.length * RH + 30;
+    var x = function (v) { return L + (v * R - lo) / (hi - lo) * (W - L - Rm); };
     var maxP = Math.max.apply(null, rows.map(function (r) { return r.p; }).concat([1]));
-    var s = '<svg viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="내러티브별 적정 시가총액 도트 차트">';
-    // 그리드·축
+    var s = '<svg viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="시나리오별 적정 코스피 도트 차트">';
     for (var v = lo; v <= hi + 1e-6; v += step) {
-      s += '<line x1="' + x(v) + '" x2="' + x(v) + '" y1="' + (T - 6) + '" y2="' + (H - 26) + '" stroke="var(--line)" stroke-width="1"/>';
-      s += '<text x="' + x(v) + '" y="' + (H - 8) + '" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="var(--font-num)">' + nf0.format(v) + "</text>";
+      var xv = L + (v - lo) / (hi - lo) * (W - L - Rm);
+      s += '<line x1="' + xv + '" x2="' + xv + '" y1="' + (T - 6) + '" y2="' + (H - 26) + '" stroke="var(--line)" stroke-width="1"/>';
+      s += '<text x="' + xv + '" y="' + (H - 8) + '" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="var(--font-num)">' + nf0.format(v) + "</text>";
     }
-    // 기준선
     var refs = [
-      { v: c.MC, label: "현재 " + jo(c.MC), stroke: "var(--ink)", dash: "", w: 2 },
-      { v: c.B.total, label: "베이스 " + jo(c.B.total), stroke: "var(--muted)", dash: "5 4", w: 1.5 },
-      { v: c.w, label: "가중 " + jo(c.w), stroke: "var(--accent)", dash: "", w: 3 }
+      { v: c.MC, label: "현재 " + ix(c.MC), stroke: "var(--ink)", dash: "", w: 2 },
+      { v: c.B.total, label: "베이스 " + ix(c.B.total), stroke: "var(--muted)", dash: "5 4", w: 1.5 },
+      { v: c.w, label: "가중 " + ix(c.w), stroke: "var(--accent)", dash: "", w: 3 }
     ].sort(function (a, b) { return a.v - b.v; });
-    refs.forEach(function (rf, j) {
+    refs.forEach(function (rf) {
       s += '<line x1="' + x(rf.v) + '" x2="' + x(rf.v) + '" y1="' + (T - 6) + '" y2="' + (H - 26) + '" stroke="' + rf.stroke + '" stroke-width="' + rf.w + '"' + (rf.dash ? ' stroke-dasharray="' + rf.dash + '"' : "") + "/>";
     });
-    // 라벨 겹침 방지: 3단 배치
     refs.forEach(function (rf, j) {
-      var yy = 12 + j * 13;
       var anchor = x(rf.v) > W - 120 ? "end" : x(rf.v) < L + 60 ? "start" : "middle";
-      s += '<text x="' + x(rf.v) + '" y="' + yy + '" text-anchor="' + anchor + '" font-size="11.5" font-weight="600" fill="' + (rf.stroke === "var(--muted)" ? "var(--ink-2)" : rf.stroke) + '" font-family="var(--font-num)">' + rf.label + "</text>";
+      s += '<text x="' + x(rf.v) + '" y="' + (12 + j * 13) + '" text-anchor="' + anchor + '" font-size="11.5" font-weight="600" fill="' + (rf.stroke === "var(--muted)" ? "var(--ink-2)" : rf.stroke) + '" font-family="var(--font-num)">' + rf.label + "</text>";
     });
-    // 행
     rows.forEach(function (r, i) {
       var y = T + i * RH + RH / 2;
       var col = r.adj > c.MC ? "var(--up)" : r.adj < c.MC ? "var(--down)" : "var(--mid)";
       var name = r.x.name.length > 21 ? r.x.name.slice(0, 20) + "…" : r.x.name;
-      s += '<text x="12" y="' + (y + 4) + '" font-size="12.5" fill="var(--ink)">' + esc(name) + "</text>";
+      if (i === sel) s += '<rect x="0" y="' + (y - RH / 2 + 2) + '" width="' + W + '" height="' + (RH - 4) + '" rx="6" fill="var(--accent-soft)"/>';
+      s += '<text x="12" y="' + (y + 4) + '" font-size="12.5" fill="var(--ink)"' + (i === sel ? ' font-weight="700"' : "") + ">" + esc(name) + "</text>";
       s += '<text x="' + (L - 12) + '" y="' + (y + 4) + '" text-anchor="end" font-size="11.5" fill="var(--muted)" font-family="var(--font-num)">' + nf0.format(r.p) + "%</text>";
       s += '<line class="bar" x1="' + x(c.B.total) + '" x2="' + x(r.ext) + '" y1="' + y + '" y2="' + y + '" stroke="' + col + '" stroke-opacity="0.35" stroke-width="2"/>';
       s += '<circle cx="' + x(r.ext) + '" cy="' + y + '" r="5" fill="var(--surface)" stroke="' + col + '" stroke-width="2"/>';
-      var rad = 5 + 6 * Math.sqrt(r.p / maxP);
-      s += '<circle cx="' + x(r.adj) + '" cy="' + y + '" r="' + rad + '" fill="' + col + '" stroke="var(--surface)" stroke-width="2"/>';
-      s += '<rect x="0" y="' + (y - RH / 2) + '" width="' + W + '" height="' + RH + '" fill="transparent" data-tip="' + i + '"/>';
+      s += '<circle cx="' + x(r.adj) + '" cy="' + y + '" r="' + (5 + 6 * Math.sqrt(r.p / maxP)) + '" fill="' + col + '" stroke="var(--surface)" stroke-width="2"/>';
+      s += '<rect x="0" y="' + (y - RH / 2) + '" width="' + W + '" height="' + RH + '" fill="transparent" style="cursor:pointer" data-tip="' + i + '"/>';
     });
     s += "</svg>";
     var box = document.getElementById("chart");
-    box.innerHTML = s;
-    box.__rows = rows; box.__c = c;
+    box.innerHTML = s; box.__rows = rows; box.__c = c;
   }
-  var tip = document.getElementById("tip");
-  document.getElementById("chart").addEventListener("pointermove", function (e) {
+  var tip = document.getElementById("tip"), chartEl = document.getElementById("chart");
+  chartEl.addEventListener("pointermove", function (e) {
     var t = e.target.getAttribute && e.target.getAttribute("data-tip");
     if (t == null) { tip.hidden = true; return; }
-    var box = this, r = box.__rows[+t], c = box.__c;
-    tip.innerHTML = esc(r.x.name) + " · 확률 " + nf0.format(r.p) + "%<br>DCF 값 <b>" + jo(r.V) + "조</b><br>반사성 적정 <b>" + jo(r.adj) + "조</b> (" + pct(r.adj / c.MC - 1) + ")<br>극단 <b>" + jo(r.ext) + "조</b>";
+    var r = chartEl.__rows[+t], c = chartEl.__c;
+    tip.innerHTML = esc(r.x.name) + " · 확률 " + nf0.format(r.p) + "%<br>DCF 값 <b>" + ix(r.V) + "</b> (" + jo(r.V) + "조)<br>반사성 적정 <b>" + ix(r.adj) + "</b> (" + jo(r.adj) + "조) " + pct(r.adj / c.MC - 1) + "<br>극단 <b>" + ix(r.ext) + "</b> (" + jo(r.ext) + "조)<br>눌러서 가정 보기";
     tip.hidden = false;
-    var tx = Math.min(e.clientX + 14, window.innerWidth - tip.offsetWidth - 8);
-    tip.style.left = tx + "px"; tip.style.top = (e.clientY + 14) + "px";
+    tip.style.left = Math.min(e.clientX + 14, window.innerWidth - tip.offsetWidth - 8) + "px"; tip.style.top = (e.clientY + 14) + "px";
   });
-  document.getElementById("chart").addEventListener("pointerleave", function () { tip.hidden = true; });
+  chartEl.addEventListener("pointerleave", function () { tip.hidden = true; });
+  chartEl.addEventListener("click", function (e) {
+    var t = e.target.getAttribute && e.target.getAttribute("data-tip");
+    if (t != null) { pick(+t); document.getElementById("chips").scrollIntoView({ block: "nearest", behavior: "smooth" }); }
+  });
 
-  /* ---------- 히트맵 ---------- */
+  /* ---------- 히트맵 (지수) ---------- */
   function heatStyle(v, MC) {
     var d = v / MC - 1, a = Math.min(Math.abs(d) / 0.6, 1) * 62;
-    var hue = d >= 0 ? "var(--up)" : "var(--down)";
-    return "background: color-mix(in oklab, " + hue + " " + a.toFixed(0) + "%, var(--surface))";
+    return "background: color-mix(in oklab, " + (d >= 0 ? "var(--up)" : "var(--down)") + " " + a.toFixed(0) + "%, var(--surface))";
+  }
+  function heatCell(v, MC, isBase) {
+    return '<td class="cell' + (isBase ? " base" : "") + '" style="' + heatStyle(v, MC) + '" title="시총 ' + jo(v) + "조 · 현재 대비 " + pct(v / MC - 1) + '">' + ix(v) + "</td>";
   }
   function renderHeat(c) {
-    var bi = c.bi, NE = bi.semi + bi.oth;
-    var nes = [250, 300, 350, 400, 450, 500];
-    if (nes.indexOf(NE) < 0) { nes.push(NE); nes.sort(function (a, b) { return a - b; }); }
-    var h = '<thead><tr><th>업사이클 \\ 정상 이익</th>' + nes.map(function (n) { return '<th class="n">' + nf0.format(n) + "조</th>"; }).join("") + "</tr></thead><tbody>";
+    var bi = c.bi, sems = [0, 50, 100, 150, 200];
+    if (sems.indexOf(bi.semi) < 0) { sems.push(bi.semi); sems.sort(function (a, b) { return a - b; }); }
+    var h = '<thead><tr><th>업사이클 \\ 반도체 정상</th>' + sems.map(function (n) { return '<th class="n">' + jo(n) + "조</th>"; }).join("") + "</tr></thead><tbody>";
     for (var N = 1; N <= 5; N++) {
       h += '<tr><td class="rh">' + N + "년 (" + YEARS[N - 1] + ")</td>";
-      nes.forEach(function (n) {
-        var v = pv(bi.E, N, n, bi.per, bi.r).total;
-        h += '<td class="cell' + (N === bi.N && n === NE ? " base" : "") + '" style="' + heatStyle(v, c.MC) + '" title="' + pct(v / c.MC - 1) + ' vs 현재">' + jo(v) + "</td>";
-      });
+      sems.forEach(function (n) { h += heatCell(pv(Object.assign({}, bi, { N: N, semi: n })).total, c.MC, N === bi.N && n === bi.semi); });
       h += "</tr>";
     }
     document.getElementById("heat1").innerHTML = h + "</tbody>";
-
-    var rs = [-2, -1, 0, 1, 2].map(function (d) { return bi.r + d / 100; });
-    var pers = [8, 9, 10, 11, 12];
+    var rs = [-2, -1, 0, 1, 2].map(function (d) { return bi.r + d / 100; }), pers = [8, 9, 10, 11, 12];
     if (pers.indexOf(bi.per) < 0) { pers.push(bi.per); pers.sort(function (a, b) { return a - b; }); }
     var g = '<thead><tr><th>할인율 \\ PER</th>' + pers.map(function (p) { return '<th class="n">' + nf1.format(p) + "배</th>"; }).join("") + "</tr></thead><tbody>";
     rs.forEach(function (r, j) {
       g += '<tr><td class="rh">' + nf1.format(r * 100) + "%</td>";
-      pers.forEach(function (p) {
-        var v = pv(bi.E, bi.N, NE, p, r).total;
-        g += '<td class="cell' + (j === 2 && p === bi.per ? " base" : "") + '" style="' + heatStyle(v, c.MC) + '" title="' + pct(v / c.MC - 1) + ' vs 현재">' + jo(v) + "</td>";
-      });
+      pers.forEach(function (p) { g += heatCell(pv(Object.assign({}, bi, { per: p, r: r })).total, c.MC, j === 2 && p === bi.per); });
       g += "</tr>";
     });
     document.getElementById("heat2").innerHTML = g + "</tbody>";
   }
 
   /* ---------- 지표 ---------- */
+  function setText(id, t) { var el = document.getElementById(id); if (el) el.textContent = t; }
   function updateInd(c) {
     var up = 0, down = 0, need = 0;
     state.indicators.forEach(function (x, i) {
       var v = x.auto === "gap" ? (c.MC / c.B.total - 1) * 100 : (x.value === "" || x.value == null ? null : Number(x.value));
       if (x.auto) setText("iv" + i, v == null ? "—" : nf1.format(v));
-      var el = document.getElementById("is" + i);
-      if (!el) return;
+      var el = document.getElementById("is" + i); if (!el) return;
       if (v == null || !isFinite(v)) { el.innerHTML = '<span class="pill need">입력 필요</span>'; need++; return; }
       var th = num(x.th), on = x.op === "<" ? v < th : x.op === "<=" ? v <= th : x.op === ">" ? v > th : v >= th;
       if (on) { if (x.dir === "up") up++; else down++; }
-      el.innerHTML = on ? '<span class="pill on-' + x.dir + '">발동 · ' + (x.dir === "up" ? "시총 ↑" : "시총 ↓") + "</span>" : '<span class="pill">대기</span>';
+      el.innerHTML = on ? '<span class="pill on-' + x.dir + '">발동 · ' + (x.dir === "up" ? "지수 ↑" : "지수 ↓") + "</span>" : '<span class="pill">대기</span>';
     });
     document.getElementById("balance").innerHTML =
-      '<span class="up">상방 발동 <b class="num">' + up + "</b></span>" +
-      '<span class="down">하방 발동 <b class="num">' + down + "</b></span>" +
-      '<span class="small">입력 필요 <b class="num">' + need + "</b></span>";
+      '<span class="up">상방 발동 <b class="num">' + up + '</b></span><span class="down">하방 발동 <b class="num">' + down + '</b></span><span class="small">입력 필요 <b class="num">' + need + "</b></span>";
   }
 
   /* ---------- 이벤트 ---------- */
   document.addEventListener("input", function (e) {
     var el = e.target, d = el.dataset;
     if (d.path) { setPath(d.path, el.value === "" ? 0 : Number(el.value)); update(); }
-    else if (d.e != null) { state.base.E[+d.e] = el.value === "" ? 0 : Number(el.value); update(); }
-    else if (d.row != null) {
-      state.narratives[+d.row][d.key] = d.key === "name" ? el.value : (el.value === "" ? 0 : Number(el.value));
-      update();
-    } else if (d.ind != null && el.tagName === "INPUT") {
-      state.indicators[+d.ind][d.key] = el.value === "" ? null : Number(el.value);
-      update();
-    }
+    else if (d.e != null) { state.base.S[+d.e] = el.value === "" ? 0 : Number(el.value); update(); }
+    else if (d.row != null) { state.narratives[+d.row][d.key] = d.key === "name" ? el.value : (el.value === "" ? 0 : Number(el.value)); update(); }
+    else if (d.ind != null && el.tagName === "INPUT") { state.indicators[+d.ind][d.key] = el.value === "" ? null : Number(el.value); update(); }
   });
   document.addEventListener("change", function (e) {
     var el = e.target, d = el.dataset;
@@ -784,15 +886,19 @@ footer a { color: var(--ink-2); }
   });
   document.getElementById("narr").addEventListener("click", function (e) {
     var i = e.target.getAttribute("data-del");
-    if (i == null) return;
-    state.narratives.splice(+i, 1);
-    renderNarrTable(); update();
+    if (i != null) { state.narratives.splice(+i, 1); if (sel >= state.narratives.length) sel = state.narratives.length - 1; if (sel < 0) sel = 0; renderNarrTable(); update(); return; }
+    var tr = e.target.closest("tr[data-sel]");
+    if (tr && +tr.getAttribute("data-sel") !== sel) pick(+tr.getAttribute("data-sel"));
+  });
+  document.getElementById("narr").addEventListener("focusin", function (e) {
+    var tr = e.target.closest("tr[data-sel]");
+    if (tr && +tr.getAttribute("data-sel") !== sel) pick(+tr.getAttribute("data-sel"));
   });
   document.getElementById("addRow").addEventListener("click", function () {
-    state.narratives.push({ name: "새 내러티브", p: 0, dE27: 0, dE28: 0, dE29: 0, dN: 0, dSemi: 0, dOth: 0, dPer: 0, dR: 0 });
+    state.narratives.push({ name: "새 시나리오", p: 0, dS27: 0, dS28: 0, dS29: 0, dN: 0, dSemi: 0, dPer: 0, dR: 0, desc: "" });
+    sel = state.narratives.length - 1;
     renderNarrTable(); update();
-    var el = document.getElementById("n" + (state.narratives.length - 1) + "-name");
-    if (el) { el.focus(); el.select(); }
+    var el = document.getElementById("n" + sel + "-name"); if (el) { el.focus(); el.select(); }
   });
   document.getElementById("normP").addEventListener("click", function () {
     var s = state.narratives.reduce(function (a, x) { return a + Math.max(0, num(x.p)); }, 0);
@@ -807,9 +913,7 @@ footer a { color: var(--ink-2); }
     var ta = document.getElementById("json"), txt = JSON.stringify(state, null, 2);
     ta.value = txt;
     var fallback = function () { ta.focus(); ta.select(); say("복사 권한이 없어 텍스트를 선택해 두었습니다. Ctrl+C(⌘C)로 복사하세요."); };
-    try {
-      navigator.clipboard.writeText(txt).then(function () { say("설정 JSON을 복사했습니다."); }, fallback);
-    } catch (e) { fallback(); }
+    try { navigator.clipboard.writeText(txt).then(function () { say("설정 JSON을 복사했습니다."); }, fallback); } catch (e) { fallback(); }
   });
   document.getElementById("applyJson").addEventListener("click", function () {
     try {
@@ -820,9 +924,10 @@ footer a { color: var(--ink-2); }
   });
   var resetArmed = false;
   document.getElementById("resetAll").addEventListener("click", function () {
-    if (!resetArmed) { resetArmed = true; this.textContent = "한 번 더 누르면 복원"; var b = this; setTimeout(function () { resetArmed = false; b.textContent = "기본값 복원"; }, 3000); return; }
-    resetArmed = false; this.textContent = "기본값 복원";
-    state = clone(DEFAULT); renderAll(); say("기본값으로 되돌렸습니다.");
+    var b = this;
+    if (!resetArmed) { resetArmed = true; b.textContent = "한 번 더 누르면 복원"; setTimeout(function () { resetArmed = false; b.textContent = "기본값 복원"; }, 3000); return; }
+    resetArmed = false; b.textContent = "기본값 복원";
+    state = clone(DEFAULT); sel = 2; renderAll(); say("기본값으로 되돌렸습니다.");
   });
 
   renderAll();
