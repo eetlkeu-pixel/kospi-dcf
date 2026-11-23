@@ -223,6 +223,12 @@ table.src tr.model td { background: var(--accent-soft); font-weight: 600; }
 .tag.hi { color: var(--up); border-color: color-mix(in oklab, var(--up) 40%, var(--line)); }
 .tag.lo { color: var(--down); border-color: color-mix(in oklab, var(--down) 40%, var(--line)); }
 .fixed-note { font-size: 12px; color: var(--ink-2); background: var(--surface-2); border: 1px dashed var(--line); border-radius: 7px; padding: 8px 10px; }
+.calc-box { grid-column: 1 / -1; display: grid; gap: 10px; border-top: 1px solid var(--line); padding-top: 14px; min-width: 0; }
+ol.calc { margin: 0; padding-left: 0; list-style: none; display: grid; gap: 10px; }
+ol.calc li { display: grid; gap: 3px; min-width: 0; }
+ol.calc li > b { font-size: 13px; }
+code.f { font-family: var(--font-num); font-size: 12.5px; color: var(--ink-2); background: var(--surface-2); border-radius: 6px; padding: 6px 9px; white-space: normal; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+code.f b { color: var(--ink); }
 @media (max-width: 980px) { .detail { grid-template-columns: minmax(0, 1fr); } }
 </style>
 </head>
@@ -231,8 +237,8 @@ table.src tr.model td { background: var(--accent-soft); font-weight: 600; }
 <!--
   설정 데이터 블록. 내러티브를 바꿀 때는 이 JSON만 고치면 된다.
   S: 2027~2031 반도체 순이익 경로(조원). NS: 비반도체 이익(조원/년, 업사이클·정상 기간 모두 고정).
-  N: 업사이클 연수. semi: 반도체 정상 이익. r = (ktb + erp)/100.
-  내러티브 Δ: dS27/dS28/dS29(반도체 이익 %, 2029 열은 2029~2031 공통), dN(년), dSemi(조원), dPer(배), dR(%p).
+  N: 추정 기간(업사이클 포함, 이후 정상 이익 적용). semi: 반도체 정상 이익. r = (ktb + erp)/100.
+  내러티브 Δ: dS27~dS31(반도체 이익 연도별 %), dN(년), dSemi(조원), dPer(배), dR(%p).
 -->
 <script type="application/json" id="config">
 {
@@ -255,8 +261,8 @@ table.src tr.model td { background: var(--accent-soft); font-weight: 600; }
       "desc": "중국 증설과 HBM 경쟁으로 메모리 가격이 하락하고(모건스탠리 경고), 신규 팹이 가동되는 2028년에 공급 과잉. 반도체 정상 이익 50조, PER 9배." },
     { "name": "신용위험 디그로싱 + 중국 역습", "p": 10, "dS27": -25, "dS28": -60, "dS29": -75, "dN": -1, "dSemi": -70, "dPer": -1.5, "dR": 1.0,
       "desc": "1단계(2027): 신용위험이 터지며 AI 투자에 붙은 부채가 줄어드는 디그로싱이 시작된다. 민주당의 규제와 젠슨 황이 언급한 우려가 겹쳐 하이퍼스케일러가 CAPEX를 줄이고, 2027년 반도체 이익부터 깨진다(−25%). 2단계(2028~): 중국 반도체가 역습한다. 셰일혁명이 OPEC의 가격 결정력을 약하게 만들었듯, 중국은 HBM을 따라잡지 않아도 범용 D램 공급만 늘려 3사 과점을 흔들 수 있다. 국가 지원을 받는 공급자는 적자에도 생산을 계속하므로 기존 업체가 감산해도 효과가 제한된다. 그 결과 D램 가격이 폭락한다(2028년 −60%, 2029년 이후 −75%). 진짜 손상은 단기 감익보다 과점에 기반한 장기 이익률 프리미엄이 사라지는 것이므로, 반도체 정상 이익을 30조로 낮추고(−70조) 업사이클을 2028년에 끝낸다. 신용 스트레스로 위험 프리미엄이 올라 할인율 +1.0%p, PER −1.5배. 핵심 체크 포인트는 2027~2028년에 AI 수요 둔화와 중국 공급 확대가 동시에 나타나는지다. D램은 원유와 달리 기술·수율·고객 인증의 진입장벽이 높아 이 경로의 확률은 낮게 둔다." },
-    { "name": "BNK: 2027 하반기 재고조정·2028 가격 폭락", "p": 10, "dS27": -19, "dS28": -83, "dS29": -80, "dN": -1, "dSemi": 0, "dPer": 0, "dR": 0,
-      "desc": "BNK투자증권 SK하이닉스 리포트(2026-11-20, 이민희) 기반. 최종 수요는 2Q26에 정점을 지났고, 2027년 2~3분기부터 채널 재고조정과 드라마틱한 가격 하락이 시작된다. 미 민주당 의회 장악으로 데이터센터 건설이 지연되고, 젠슨 황 퇴임 이후 엔비디아의 'AI 은행' 역할이 줄어 AI 중소기업 신용 위험이 커진다. 그런데도 D램 생산능력은 3년 내 50%, 5년 내 2배로 늘고, 미국·중국은 국가 지원으로 증설을 멈추지 않는다. 하이닉스 영업이익 2027년 313.7조(분기 102→101→75→35조), 2028년 34.6조(−89%), 2028년 D램 가격 −64%. 이를 삼성전자(메모리 = 하이닉스 × 1.29 + 비메모리 40조)와 기타 반도체로 넓혀 반도체 순이익을 2027년 613조, 2028년 116조로 추정했다. 2029년은 리포트에 없어 2028년 수준의 바닥이 이어진다고 가정(−80%). 업사이클은 2028년에 끝나고 반도체 정상 이익은 베이스(100조)를 유지한다. 할인율·PER은 바꾸지 않은 순수 이익 시나리오다." }
+    { "name": "BNK: 2027 하반기 재고조정·2028 가격 폭락", "p": 10, "dS27": -19.3, "dS28": -83.4, "dS29": -87.3, "dS30": -73.2, "dS31": -60, "dN": 2, "dSemi": 0, "dPer": 0, "dR": 0,
+      "desc": "BNK투자증권 SK하이닉스 리포트(2026-11-20, 이민희) 기반. 최종 수요는 2Q26에 정점을 지났고, 2027년 2~3분기부터 채널 재고조정과 드라마틱한 가격 하락이 시작된다. 미 민주당 의회 장악으로 데이터센터 건설이 지연되고, 젠슨 황 퇴임 이후 엔비디아의 'AI 은행' 역할이 줄어 AI 중소기업 신용 위험이 커진다. 그런데도 D램 생산능력은 3년 내 50%, 5년 내 2배로 늘고, 미국·중국은 국가 지원으로 증설을 멈추지 않는다. 하이닉스 영업이익 2027년 313.7조(분기 102→101→75→35조), 2028년 34.6조(−89%), 2028년 D램 가격 −64%. 이를 삼성전자(메모리 = 하이닉스 × 1.29 + 비메모리 40조)와 기타 반도체로 넓혀 반도체 순이익을 2027년 613조, 2028년 116조로 추정했다. 2029~2031년은 리포트에 없어 사이클 논리로 이었다. 2029년 80조: 생산능력이 계속 늘어 가격이 원가(2028년 D램 원가 0.48달러, 가격 0.62달러)에 더 붙는 바닥. 2030년 150조: 2028년 설비투자 축소(하이닉스 56.7→40.7조) 효과로 회복 시작. 2031년 200조: 중간 사이클. 5년을 모두 명시적으로 추정하고, 2032년 이후는 반도체 정상 이익 100조 + 비반도체 300조에 PER 10배를 적용한다. 할인율·PER은 바꾸지 않은 순수 이익 시나리오다. 목표가(PBR 1.5배)는 쓰지 않았다." }
   ],
   "indicators": [
     { "name": "2028 반도체 투톱 영업이익 컨센 증가율 (%)", "value": 0.7, "op": "<", "th": -20, "dir": "down", "note": "에프앤가이드 8월 943 ÷ 936조. 키움 4Q27 연율화 기준이면 약 −20%" },
@@ -340,7 +346,7 @@ table.src tr.model td { background: var(--accent-soft); font-weight: 600; }
           <tr><td>투톱 영업이익</td><td>KB (11월 초)</td><td class="n">1,111조</td><td class="n">—</td><td>삼성 640.2·하이닉스 470.3조</td></tr>
           <tr><td>투톱 영업이익</td><td>골드만·메리츠·UBS</td><td class="n">—</td><td class="n">1,064~1,569조</td><td>2028 낙관 진영</td></tr>
           <tr><td>하이닉스 영업이익</td><td>BNK (11/20)</td><td class="n">313.7조</td><td class="n">34.6조</td><td>2027년 12% 하향. 4Q27 35.3조, 2028년 −89%. 목표가 105만원(PBR 1.5배)</td></tr>
-          <tr class="model"><td>반도체 순이익</td><td>BNK 기반 추정</td><td class="n">613조</td><td class="n">116조</td><td>하이닉스 → 삼성전자 → 코스피로 확장 (아래 표)</td></tr>
+          <tr class="model"><td>반도체 순이익</td><td>BNK 기반 추정</td><td class="n">613조</td><td class="n">116조</td><td>하이닉스 → 삼성전자 → 코스피로 확장, 2031년까지 5개년 (아래 표)</td></tr>
           <tr><td>메모리 가격</td><td>트렌드포스</td><td class="n">상승 둔화</td><td class="n">공급 본격 증가</td><td>고정거래가는 2027년까지 오르되 상승폭 축소. 신규 생산능력은 2H27 가동, 2028년 기여</td></tr>
         </tbody>
       </table>
@@ -351,16 +357,16 @@ table.src tr.model td { background: var(--accent-soft); font-weight: 600; }
       <p><span class="tag lo">BNK 시나리오</span>BNK는 하이닉스만 추정했습니다. 삼성전자와 코스피는 아래처럼 넓혔습니다. 삼성 메모리 이익을 하이닉스의 1.29배로 둔 것은 컨센서스(삼성 545조 − 비메모리 약 40조 = 메모리 505조, 하이닉스 392조)의 비율입니다. 하락기에는 삼성 메모리의 원가가 불리해 실제 감익 폭이 더 클 수 있습니다.</p>
       <div class="scroll">
         <table class="kv">
-          <thead><tr><th>BNK 기반 이익 추정 (조원)</th><th class="n">2027</th><th class="n">2028</th><th>추정 방법</th></tr></thead>
+          <thead><tr><th>BNK 기반 이익 추정 (조원)</th><th class="n">2027</th><th class="n">2028</th><th class="n">2029</th><th class="n">2030</th><th class="n">2031</th><th>추정 방법</th></tr></thead>
           <tbody>
-            <tr><td>SK하이닉스 영업이익</td><td class="n">313.7</td><td class="n">34.6</td><td class="small">BNK 원문</td></tr>
-            <tr><td>SK하이닉스 순이익(지배)</td><td class="n">247.5</td><td class="n">35.0</td><td class="small">BNK 원문</td></tr>
-            <tr><td>삼성전자 영업이익</td><td class="n">445</td><td class="n">85</td><td class="small">하이닉스 × 1.29 + 비메모리 40</td></tr>
-            <tr><td>삼성전자 순이익</td><td class="n">356</td><td class="n">76</td><td class="small">영업이익 × 0.8 (2028년은 이자수익 감안 × 0.9)</td></tr>
-            <tr><td>기타 반도체 순이익</td><td class="n">10</td><td class="n">5</td><td class="small">가정</td></tr>
-            <tr class="total"><td>반도체 순이익</td><td class="n">613</td><td class="n">116</td><td class="small">베이스 대비 −19%, −83%</td></tr>
-            <tr><td>비반도체 (고정)</td><td class="n">300</td><td class="n">300</td><td class="small">모델 규칙</td></tr>
-            <tr class="total"><td>코스피 순이익</td><td class="n">913</td><td class="n">416</td><td class="small">베이스 1,060 / 1,000</td></tr>
+            <tr><td>SK하이닉스 영업이익</td><td class="n">313.7</td><td class="n">34.6</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="small">BNK 원문</td></tr>
+            <tr><td>SK하이닉스 순이익(지배)</td><td class="n">247.5</td><td class="n">35.0</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="small">BNK 원문</td></tr>
+            <tr><td>삼성전자 영업이익</td><td class="n">445</td><td class="n">85</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="small">하이닉스 × 1.29 + 비메모리 40</td></tr>
+            <tr><td>삼성전자 순이익</td><td class="n">356</td><td class="n">76</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="small">영업이익 × 0.8 (2028년은 이자수익 감안 × 0.9)</td></tr>
+            <tr><td>기타 반도체 순이익</td><td class="n">10</td><td class="n">5</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="small">가정</td></tr>
+            <tr class="total"><td>반도체 순이익</td><td class="n">613</td><td class="n">116</td><td class="n">80</td><td class="n">150</td><td class="n">200</td><td class="small">2029~31은 사이클 가정: 원가 바닥 → 설비투자 축소 후 회복 → 중간 사이클</td></tr>
+            <tr><td>비반도체 (고정)</td><td class="n">300</td><td class="n">300</td><td class="n">300</td><td class="n">300</td><td class="n">300</td><td class="small">모델 규칙</td></tr>
+            <tr class="total"><td>코스피 순이익</td><td class="n">913</td><td class="n">416</td><td class="n">380</td><td class="n">450</td><td class="n">500</td><td class="small">베이스 1,060 / 1,000 / 930 / 860 / 800</td></tr>
           </tbody>
         </table>
       </div>
@@ -388,7 +394,7 @@ table.src tr.model td { background: var(--accent-soft); font-weight: 600; }
         </div>
 
         <div class="fields">
-          <div class="field"><label for="b-N">업사이클 연수 N</label><input type="number" id="b-N" min="1" max="5" step="1" data-path="base.N"><span class="hint">1~5년</span></div>
+          <div class="field"><label for="b-N">추정 기간 N</label><input type="number" id="b-N" min="1" max="5" step="1" data-path="base.N"><span class="hint">1~5년 · 이후 정상 이익 × PER</span></div>
           <div class="field"><label for="b-semi">반도체 정상 이익</label><input type="number" id="b-semi" step="5" data-path="base.semi"><span class="hint">조원/년</span></div>
           <div class="field"><label for="b-per">정상 PER</label><input type="number" id="b-per" step="0.5" data-path="base.per"><span class="hint">배 · 20년 평균 10</span></div>
           <div class="field"><label for="b-ktb">국고채 10년 (%)</label><input type="number" id="b-ktb" step="0.05" data-path="base.ktb"><span class="hint">11/3 종가 4.00</span></div>
@@ -431,18 +437,18 @@ table.src tr.model td { background: var(--accent-soft); font-weight: 600; }
         <button type="button" class="ghost" id="normP">확률 100%로 맞추기</button>
       </div>
     </div>
-    <p class="small">각 줄은 베이스 대비 변화량입니다. 반도체 이익 Δ는 연도별 비율(%)이고 2029+ 열은 2029~2031년에 함께 적용됩니다. 비반도체는 고정이라 입력 칸이 없습니다.</p>
+    <p class="small">각 줄은 베이스 대비 변화량입니다. 반도체 이익 Δ는 2027~2031년 연도별 비율(%)입니다. 추정 기간 N 안의 연도만 DCF에 들어갑니다. 비반도체는 고정이라 입력 칸이 없습니다.</p>
     <div class="scroll">
       <table class="narr" id="narr">
         <thead>
           <tr>
             <th rowspan="2">시나리오</th><th rowspan="2" class="n">확률 %</th>
-            <th colspan="3" class="grp sep">반도체 이익 Δ%</th>
+            <th colspan="5" class="grp sep">반도체 이익 Δ% (베이스 경로 대비)</th>
             <th rowspan="2" class="n">ΔN 년</th><th rowspan="2" class="n">Δ반도체<br>정상 조</th>
             <th rowspan="2" class="n">ΔPER</th><th rowspan="2" class="n">Δr %p</th>
             <th rowspan="2" class="n sep">반사성 적정<br>지수 (시총)</th><th rowspan="2" class="n">극단<br>지수 (시총)</th><th rowspan="2" class="n">현재 대비</th><th rowspan="2"></th>
           </tr>
-          <tr><th class="n sep">2027</th><th class="n">2028</th><th class="n">2029+</th></tr>
+          <tr><th class="n sep">2027</th><th class="n">2028</th><th class="n">2029</th><th class="n">2030</th><th class="n">2031</th></tr>
         </thead>
         <tbody></tbody>
       </table>
@@ -540,10 +546,11 @@ table.src tr.model td { background: var(--accent-soft); font-weight: 600; }
 <script>
 (function () {
   "use strict";
-  var STORE = "kospi-cycle-dcf-v4";
+  var STORE = "kospi-cycle-dcf-v5";
   var YEARS = [2027, 2028, 2029, 2030, 2031];
   var DEFAULT = JSON.parse(document.getElementById("config").textContent);
   var state = load() || clone(DEFAULT);
+  fillNarr(DEFAULT.narratives); fillNarr(state.narratives);
   var sel = 2;
   try { var sv = Number(localStorage.getItem(STORE + "-sel")); if (isFinite(sv)) sel = sv; } catch (e) {}
 
@@ -585,10 +592,13 @@ table.src tr.model td { background: var(--accent-soft); font-weight: 600; }
     var b = state.base;
     return { S: b.S.map(num), NS: num(b.NS), N: clampN(num(b.N, 3)), semi: num(b.semi), per: num(b.per), r: baseRate() };
   }
+  var DKEYS = ["dS27", "dS28", "dS29", "dS30", "dS31"];
+  function dsY(x, i) { var v = x[DKEYS[i]]; return (v === undefined || v === null || v === "") && i > 2 ? x.dS29 : v; }
+  function fillNarr(list) { list.forEach(function (x) { if (x.dS30 == null) x.dS30 = Number(x.dS29) || 0; if (x.dS31 == null) x.dS31 = Number(x.dS29) || 0; }); return list; }
   function narrInputs(x) {
     var b = baseInputs();
     return {
-      S: b.S.map(function (e, i) { return e * (1 + num(i === 0 ? x.dS27 : i === 1 ? x.dS28 : x.dS29) / 100); }),
+      S: b.S.map(function (e, i) { return e * (1 + num(dsY(x, i)) / 100); }),
       NS: b.NS, N: clampN(b.N + num(x.dN)), semi: b.semi + num(x.dSemi), per: b.per + num(x.dPer), r: b.r + num(x.dR) / 100
     };
   }
@@ -644,7 +654,7 @@ table.src tr.model td { background: var(--accent-soft); font-weight: 600; }
     document.querySelector("#narr tbody").innerHTML = state.narratives.map(function (x, i) {
       return '<tr data-sel="' + i + '"' + (i === sel ? ' class="sel"' : "") + ">" +
         '<td><input type="text" id="n' + i + '-name" data-row="' + i + '" data-key="name" value="' + esc(x.name) + '" aria-label="시나리오 이름"></td>' +
-        narrCell(i, "p", 5) + narrCell(i, "dS27", 1, " sep") + narrCell(i, "dS28", 1) + narrCell(i, "dS29", 1) +
+        narrCell(i, "p", 5) + narrCell(i, "dS27", 1, " sep") + narrCell(i, "dS28", 1) + narrCell(i, "dS29", 1) + narrCell(i, "dS30", 1) + narrCell(i, "dS31", 1) +
         narrCell(i, "dN", 1) + narrCell(i, "dSemi", 10) + narrCell(i, "dPer", 0.5) + narrCell(i, "dR", 0.25) +
         '<td class="out sep" id="o' + i + '-adj"></td><td class="out" id="o' + i + '-ext"></td><td class="out" id="o' + i + '-pct"></td>' +
         '<td><button type="button" class="x" data-del="' + i + '" aria-label="삭제">삭제</button></td></tr>';
@@ -743,14 +753,15 @@ table.src tr.model td { background: var(--accent-soft); font-weight: 600; }
     var x = r.x, bi = c.bi, ni = r.ni, R = r.R, B = c.B;
     var ds = [];
     function add(lbl, v, unit, f) { if (num(v) !== 0) ds.push('<span class="delta">' + lbl + " " + sgn(num(v), f) + unit + "</span>"); }
-    add("반도체 이익 2027", x.dS27, "%", nf1); add("2028", x.dS28, "%", nf1); add("2029+", x.dS29, "%", nf1);
-    add("업사이클", x.dN, "년"); add("반도체 정상 이익", x.dSemi, "조"); add("PER", x.dPer, "배", nf1); add("할인율", x.dR, "%p", nf2);
+    add("반도체 이익 2027", x.dS27, "%", nf1); add("2028", x.dS28, "%", nf1); add("2029", dsY(x, 2), "%", nf1); add("2030", dsY(x, 3), "%", nf1); add("2031", dsY(x, 4), "%", nf1);
+    add("추정 기간", x.dN, "년"); add("반도체 정상 이익", x.dSemi, "조"); add("PER", x.dPer, "배", nf1); add("할인율", x.dR, "%p", nf2);
     var deltas = ds.length ? ds.join("") : '<span class="delta none">베이스와 같음 (변화 없음)</span>';
 
     var yr = '<table class="kv yr"><thead><tr><th>연도</th>' + R.rows.map(function (q) { return '<th class="n' + (q.inC ? "" : " off") + '">' + q.y + "</th>"; }).join("") + "</tr></thead><tbody>" +
       '<tr><td>반도체</td>' + R.rows.map(function (q, t) { var ch = Math.abs(q.S - bi.S[t]) > 0.05; return '<td class="n' + (q.inC ? "" : " off") + (ch && q.inC ? " chg " + cls(q.S, bi.S[t]) : "") + '">' + jo(q.S) + "</td>"; }).join("") + "</tr>" +
       '<tr><td>비반도체 (고정)</td>' + R.rows.map(function (q) { return '<td class="n' + (q.inC ? "" : " off") + '">' + jo(q.NS) + "</td>"; }).join("") + "</tr>" +
       '<tr><td>합계</td>' + R.rows.map(function (q) { return '<td class="n' + (q.inC ? "" : " off") + '">' + jo(q.E) + "</td>"; }).join("") + "</tr>" +
+      '<tr><td>할인계수</td>' + R.rows.map(function (q) { return '<td class="n' + (q.inC ? "" : " off") + '">' + (q.inC ? q.df.toFixed(3) : "—") + "</td>"; }).join("") + "</tr>" +
       '<tr><td>현재가치</td>' + R.rows.map(function (q) { return '<td class="n' + (q.inC ? "" : " off") + '">' + (q.inC ? jo(q.pv) : "—") + "</td>"; }).join("") + "</tr></tbody></table>";
 
     function pr(k, bv, nv, fmt, unit) {
@@ -759,12 +770,12 @@ table.src tr.model td { background: var(--accent-soft); font-weight: 600; }
     }
     var f1 = function (v) { return nf1.format(v); }, f2 = function (v) { return nf2.format(v); }, f0 = function (v) { return nf0.format(v); };
     var params = '<table class="kv yr"><thead><tr><th>가정</th><th class="n">베이스</th><th class="n">이 시나리오</th></tr></thead><tbody>' +
-      pr("업사이클 연수", bi.N, ni.N, f0, "년") +
+      pr("추정 기간 N", bi.N, ni.N, f0, "년") +
       pr("반도체 정상 이익", bi.semi, ni.semi, jo, "조") +
       pr("비반도체 (고정)", bi.NS, ni.NS, jo, "조") +
       pr("정상 PER", bi.per, ni.per, f1, "배") +
       pr("할인율", bi.r * 100, ni.r * 100, f2, "%") +
-      pr("업사이클 이익 현재가치", B.pe, R.pe, jo, "조") +
+      pr("추정 기간 이익 현재가치", B.pe, R.pe, jo, "조") +
       pr("터미널 가치 현재가치", B.pvtv, R.pvtv, jo, "조") +
       "</tbody></table>";
 
@@ -778,7 +789,22 @@ table.src tr.model td { background: var(--accent-soft); font-weight: 600; }
           '<span class="num ' + cls(r.adj, c.MC) + '">' + pct(r.adj / c.MC - 1) + '</span><span class="small">극단 ' + ix(r.ext) + "pt (" + jo(r.ext) + "조)</span></div>" +
       "</div>" +
       '<div style="display:grid;gap:12px;min-width:0"><div class="scroll">' + yr + '</div><div class="scroll">' + params + "</div>" +
-      '<p class="small">단위: 조원. 굵은 값은 베이스와 다른 가정, 회색 연도는 업사이클 밖입니다.</p></div>';
+      '<p class="small">단위: 조원. 굵은 값은 베이스와 다른 가정, 회색 연도는 추정 기간 밖입니다.</p></div>' +
+      calcSteps(c, r);
+  }
+  function calcSteps(c, r) {
+    var R = r.R, ni = r.ni, B = c.B, inR = R.rows.filter(function (q) { return q.inC; });
+    var dN = Math.pow(1 + ni.r, ni.N), sumDf = inR.reduce(function (a, q) { return a + q.df; }, 0);
+    var nsPart = ni.NS * sumDf + ni.NS * ni.per / dN, semiPart = R.total - nsPart;
+    var D = r.V - B.total, rt = ratio();
+    function li(t, f) { return "<li><b>" + t + '</b><code class="f">' + f + "</code></li>"; }
+    return '<div class="calc-box"><h3>계산 과정</h3><ol class="calc">' +
+      li("① 추정 기간 " + ni.N + "년 이익의 현재가치", inR.map(function (q, t) { return jo(q.E) + "÷" + (1 + ni.r).toFixed(2) + "^" + (t + 1); }).join(" + ") + " = " + inR.map(function (q) { return jo(q.pv); }).join(" + ") + " = <b>" + jo(R.pe) + "조</b>") +
+      li("② 터미널 가치 (" + (YEARS[ni.N - 1] + 1) + "년 이후)", "정상 이익 (" + jo(ni.semi) + " + " + jo(ni.NS) + ") × PER " + nf1.format(ni.per) + " = " + jo(R.tv) + "조 → ÷ " + (1 + ni.r).toFixed(2) + "^" + ni.N + " (" + nf2.format(dN) + ") = <b>" + jo(R.pvtv) + "조</b>") +
+      li("③ DCF 시가총액", jo(R.pe) + " + " + jo(R.pvtv) + " = <b>" + jo(r.V) + "조</b> · 비반도체(고정) 몫 " + jo(nsPart) + "조 (" + nf0.format(nsPart / r.V * 100) + "%), 반도체 몫 " + jo(semiPart) + "조") +
+      li("④ 반사성 조정", "Δ = " + jo(r.V) + " − 베이스 " + jo(B.total) + " = " + jo(D) + " → 적정 = " + jo(B.total) + " + " + nf2.format(c.m) + "×(" + jo(D) + ") = <b>" + jo(r.adj) + "조</b> · 극단 = ×(1+" + nf0.format(c.k * 100) + "%) → " + jo(r.ext) + "조") +
+      li("⑤ 코스피 환산", jo(r.adj) + "조 × (" + nf2.format(num(state.market.refIndex)) + " ÷ " + nf0.format(num(state.market.refCap)) + "조) = " + jo(r.adj) + " × " + rt.toFixed(4) + " = <b>" + ix(r.adj) + "pt</b> · 현재 " + nf2.format(num(state.market.index)) + "pt 대비 " + pct(r.adj / c.MC - 1)) +
+      "</ol></div>";
   }
   function pick(i) {
     sel = i;
@@ -921,7 +947,7 @@ table.src tr.model td { background: var(--accent-soft); font-weight: 600; }
     if (tr && +tr.getAttribute("data-sel") !== sel) pick(+tr.getAttribute("data-sel"));
   });
   document.getElementById("addRow").addEventListener("click", function () {
-    state.narratives.push({ name: "새 시나리오", p: 0, dS27: 0, dS28: 0, dS29: 0, dN: 0, dSemi: 0, dPer: 0, dR: 0, desc: "" });
+    state.narratives.push({ name: "새 시나리오", p: 0, dS27: 0, dS28: 0, dS29: 0, dS30: 0, dS31: 0, dN: 0, dSemi: 0, dPer: 0, dR: 0, desc: "" });
     sel = state.narratives.length - 1;
     renderNarrTable(); update();
     var el = document.getElementById("n" + sel + "-name"); if (el) { el.focus(); el.select(); }
@@ -945,7 +971,7 @@ table.src tr.model td { background: var(--accent-soft); font-weight: 600; }
     try {
       var s = normalize(JSON.parse(document.getElementById("json").value));
       if (!s) throw new Error("객체가 아닙니다");
-      state = s; renderAll(); say("JSON을 적용했습니다.");
+      state = s; fillNarr(state.narratives); renderAll(); say("JSON을 적용했습니다.");
     } catch (e) { say("JSON을 읽지 못했습니다: " + e.message + ". 따옴표와 쉼표를 확인하세요.", true); }
   });
   var resetArmed = false;
@@ -953,7 +979,7 @@ table.src tr.model td { background: var(--accent-soft); font-weight: 600; }
     var b = this;
     if (!resetArmed) { resetArmed = true; b.textContent = "한 번 더 누르면 복원"; setTimeout(function () { resetArmed = false; b.textContent = "기본값 복원"; }, 3000); return; }
     resetArmed = false; b.textContent = "기본값 복원";
-    state = clone(DEFAULT); sel = 2; renderAll(); say("기본값으로 되돌렸습니다.");
+    state = clone(DEFAULT); fillNarr(state.narratives); sel = 2; renderAll(); say("기본값으로 되돌렸습니다.");
   });
 
   renderAll();
