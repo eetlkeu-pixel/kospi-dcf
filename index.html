@@ -274,7 +274,7 @@ code.f b { color: var(--ink); }
     { "name": "코어위브 CDS 프리미엄 (bp)", "value": 1150, "op": ">=", "th": 1000, "dir": "down", "note": "BNK 리포트 Fig.6 차트 판독 근사값(10~11월). AI 신용 위험의 선행 신호" },
     { "name": "미국 하이일드 스프레드 (bp)", "value": null, "op": ">=", "th": 500, "dir": "down", "note": "신용위험 → AI 부채 디그로싱 시나리오의 1단계 신호" },
     { "name": "중국 업체 범용 D램 점유율 (%)", "value": null, "op": ">=", "th": 15, "dir": "down", "note": "중국 역습 시나리오의 2단계 신호. 기준값은 판단값" },
-    { "name": "외국인 코스피 월간 순매수 (조원)", "value": null, "op": "<", "th": 0, "dir": "down", "note": "수급 반사성" },
+    { "name": "외국인 코스피 월간 순매수 (조원)", "value": null, "op": "<", "th": 0, "dir": "down", "note": "수급 재귀 신호" },
     { "name": "현재 시총 − 베이스 모델 괴리 (%)", "value": null, "auto": "gap", "op": "<", "th": -20, "dir": "up", "note": "자동 계산" }
   ]
 }
@@ -321,8 +321,8 @@ code.f b { color: var(--ink); }
       <span><i class="sw"></i>현재 지수</span>
       <span><i class="sw dash"></i>베이스 모델</span>
       <span><i class="sw acc"></i>확률가중 적정</span>
-      <span><i class="dot" style="background:var(--ink-2)"></i>반사성 적정 (원 크기 = 확률)</span>
-      <span><i class="ring"></i>극단 (오버슈팅 κ)</span>
+      <span><i class="dot" style="background:var(--ink-2)"></i>적정가 = DCF (원 크기 = 확률)</span>
+      <span><i class="ring"></i>재귀적 모델 발동 (현실성은 낮지만 시장이 이런 공포·환희에 빠져든다면?)</span>
     </div>
   </section>
 
@@ -409,13 +409,13 @@ code.f b { color: var(--ink); }
 
     <div class="stack">
       <section class="card">
-        <div class="card-h"><h2>반사성 파라미터</h2><span class="small num" id="mval"></span></div>
+        <div class="card-h"><h2>재귀적 모델 발동</h2><span class="small num" id="mval"></span></div>
         <div class="fields">
           <div class="field"><label for="r-phi">φ 감쇠</label><input type="number" id="r-phi" step="0.01" data-path="reflex.phi"><span class="hint">주가 ↑ → 금리·원화 ↑ → 할인율 ↑</span></div>
           <div class="field"><label for="r-psi">ψ 증폭</label><input type="number" id="r-psi" step="0.01" data-path="reflex.psi"><span class="hint">주가 ↑ → 외국인 유입·부의 효과 → 멀티플 ↑</span></div>
           <div class="field"><label for="r-kappa">κ 오버슈팅 (%)</label><input type="number" id="r-kappa" step="5" data-path="reflex.kappa"><span class="hint">포지션 쏠림</span></div>
         </div>
-        <p class="small">m = 1 / (1 + φ − ψ). Δ는 각 시나리오의 DCF 값에서 베이스 모델을 뺀 값입니다.</p>
+        <p class="small">현실성은 낮지만 시장이 이런 공포·환희에 빠져든다면? 하락이 매도를, 상승이 매수를 부르는 되먹임이 돌면 DCF 적정가를 지나쳐 갑니다. 발동 값 = 베이스 + m·Δ·(1+κ), m = 1/(1 + φ − ψ), Δ = 시나리오 DCF − 베이스 DCF. 적정가에는 쓰지 않고 손절·리밸런싱 경계로만 봅니다.</p>
       </section>
 
       <section class="card">
@@ -446,7 +446,7 @@ code.f b { color: var(--ink); }
             <th colspan="5" class="grp sep">반도체 이익 Δ% (베이스 경로 대비)</th>
             <th rowspan="2" class="n">ΔN 년</th><th rowspan="2" class="n">Δ반도체<br>정상 조</th>
             <th rowspan="2" class="n">ΔPER</th><th rowspan="2" class="n">Δr %p</th>
-            <th rowspan="2" class="n sep">반사성 적정<br>지수 (시총)</th><th rowspan="2" class="n">극단<br>지수 (시총)</th><th rowspan="2" class="n">현재 대비</th><th rowspan="2"></th>
+            <th rowspan="2" class="n sep">적정가 (DCF)<br>지수 (시총)</th><th rowspan="2" class="n">재귀 발동<br>지수 (시총)</th><th rowspan="2" class="n">현재 대비</th><th rowspan="2"></th>
           </tr>
           <tr><th class="n sep">2027</th><th class="n">2028</th><th class="n">2029</th><th class="n">2030</th><th class="n">2031</th></tr>
         </thead>
@@ -470,7 +470,7 @@ code.f b { color: var(--ink); }
 
   <section class="card">
     <div class="card-h">
-      <h2>반사성 지표 · 반증 신호</h2>
+      <h2>반증 신호 · 재귀 신호</h2>
       <div class="balance" id="balance"></div>
     </div>
     <p class="small">판정 시점: 2027년 2월(4분기 실적 시즌), 2027년 7월(2분기 실적 시즌)의 2028년 컨센서스 방향. 값을 비우면 "입력 필요"로 표시됩니다.</p>
@@ -508,8 +508,9 @@ code.f b { color: var(--ink); }
 할인율 r          = 국고채 10년 + 주식 위험 프리미엄
 
 시나리오 값 V     = PV(베이스 + 시나리오 Δ)
-반사성 적정       = PV(베이스) + m·(V − PV(베이스)),   m = 1/(1 + φ − ψ)
-극단              = PV(베이스) + m·(V − PV(베이스))·(1+κ)</pre>
+적정가            = V (DCF 그대로)
+재귀적 모델 발동  = PV(베이스) + m·(V − PV(베이스))·(1+κ),   m = 1/(1 + φ − ψ)
+                    (현실성은 낮지만 시장이 이런 공포·환희에 빠져든다면?)</pre>
         <ul>
           <li>지수 환산은 6/11 지수-시가총액 비율을 씁니다. 신규 상장·상장 폐지를 반영하지 않습니다.</li>
           <li>반도체 순이익은 투톱 영업이익에 세후 비율 약 0.78을 곱하고 기타 반도체주를 더한 근사값입니다.</li>
@@ -608,7 +609,7 @@ code.f b { color: var(--ink); }
     var rf = state.reflex, m = 1 / (1 + num(rf.phi) - num(rf.psi)), k = num(rf.kappa) / 100;
     var rows = state.narratives.map(function (x) {
       var ni = narrInputs(x), R = pv(ni), D = R.total - B.total;
-      return { x: x, ni: ni, R: R, p: Math.max(0, num(x.p)), V: R.total, adj: B.total + m * D, ext: B.total + m * D * (1 + k) };
+      return { x: x, ni: ni, R: R, p: Math.max(0, num(x.p)), V: R.total, adj: R.total, ext: B.total + m * D * (1 + k) };
     });
     var ps = rows.reduce(function (a, r) { return a + r.p; }, 0);
     var w = ps > 0 ? rows.reduce(function (a, r) { return a + r.p * r.adj; }, 0) / ps : B.total;
@@ -683,8 +684,8 @@ code.f b { color: var(--ink); }
       { k: "현재 코스피", v: c.MC, d: "", cur: true },
       { k: "베이스 모델", v: c.B.total },
       { k: "확률가중 적정", v: c.w, hl: true },
-      { k: "상방 극단", v: c.hi },
-      { k: "하방 극단", v: c.lo }
+      { k: "재귀 발동 · 환희", v: c.hi },
+      { k: "재귀 발동 · 공포", v: c.lo }
     ];
     document.getElementById("tiles").innerHTML = tiles.map(function (t) {
       var main = t.cur ? nf2.format(num(state.market.index)) : ix(t.v);
@@ -695,7 +696,7 @@ code.f b { color: var(--ink); }
     var bN = c.bi.N, imp = c.implied[bN - 1];
     document.getElementById("notes").innerHTML =
       "<span>할인율 r <b>" + nf2.format(c.bi.r * 100) + "%</b></span>" +
-      "<span>반사성 승수 m <b>" + nf2.format(c.m) + "×</b></span>" +
+      "<span>재귀 승수 m <b>" + nf2.format(c.m) + "×</b></span>" +
       "<span>비반도체 고정 <b>" + jo(c.bi.NS) + "조</b></span>" +
       "<span>시장 내재 반도체 정상 이익 (N=" + bN + ") <b>" + jo(imp.semi) + "조</b> · 모델 " + jo(c.bi.semi) + "조</span>";
 
@@ -784,9 +785,9 @@ code.f b { color: var(--ink); }
         "<h3>" + esc(x.name) + ' <span class="small">· 확률 ' + nf0.format(r.p) + "%</span></h3>" +
         '<p class="desc">' + esc(x.desc || "설명이 없습니다. 설정 JSON의 desc 항목에 적으면 여기에 표시됩니다.") + "</p>" +
         '<div class="delta-list">' + deltas + "</div>" +
-        '<div class="result-big"><span class="small">DCF 값</span><span class="v">' + ix(r.V) + '<small>pt</small></span><span class="mc">(' + jo(r.V) + "조)</span></div>" +
-        '<div class="result-big"><span class="small">반사성 적정</span><span class="v ' + cls(r.adj, c.MC) + '">' + ix(r.adj) + '<small>pt</small></span><span class="mc">(' + jo(r.adj) + "조)</span>" +
-          '<span class="num ' + cls(r.adj, c.MC) + '">' + pct(r.adj / c.MC - 1) + '</span><span class="small">극단 ' + ix(r.ext) + "pt (" + jo(r.ext) + "조)</span></div>" +
+        '<div class="result-big"><span class="small">적정가 (DCF)</span><span class="v ' + cls(r.V, c.MC) + '">' + ix(r.V) + '<small>pt</small></span><span class="mc">(' + jo(r.V) + "조)</span>" +
+          '<span class="num ' + cls(r.V, c.MC) + '">' + pct(r.V / c.MC - 1) + "</span></div>" +
+        '<div class="result-big"><span class="small">재귀적 모델 발동</span><span class="num ' + cls(r.ext, c.MC) + '" style="font-size:17px;font-weight:600">' + ix(r.ext) + 'pt</span><span class="mc">(' + jo(r.ext) + "조) " + pct(r.ext / c.MC - 1) + '</span><span class="small">현실성은 낮지만 시장이 이런 공포·환희에 빠져든다면?</span></div>' +
       "</div>" +
       '<div style="display:grid;gap:12px;min-width:0"><div class="scroll">' + yr + '</div><div class="scroll">' + params + "</div>" +
       '<p class="small">단위: 조원. 굵은 값은 베이스와 다른 가정, 회색 연도는 추정 기간 밖입니다.</p></div>' +
@@ -802,8 +803,8 @@ code.f b { color: var(--ink); }
       li("① 추정 기간 " + ni.N + "년 이익의 현재가치", inR.map(function (q, t) { return jo(q.E) + "÷" + (1 + ni.r).toFixed(2) + "^" + (t + 1); }).join(" + ") + " = " + inR.map(function (q) { return jo(q.pv); }).join(" + ") + " = <b>" + jo(R.pe) + "조</b>") +
       li("② 터미널 가치 (" + (YEARS[ni.N - 1] + 1) + "년 이후)", "정상 이익 (" + jo(ni.semi) + " + " + jo(ni.NS) + ") × PER " + nf1.format(ni.per) + " = " + jo(R.tv) + "조 → ÷ " + (1 + ni.r).toFixed(2) + "^" + ni.N + " (" + nf2.format(dN) + ") = <b>" + jo(R.pvtv) + "조</b>") +
       li("③ DCF 시가총액", jo(R.pe) + " + " + jo(R.pvtv) + " = <b>" + jo(r.V) + "조</b> · 비반도체(고정) 몫 " + jo(nsPart) + "조 (" + nf0.format(nsPart / r.V * 100) + "%), 반도체 몫 " + jo(semiPart) + "조") +
-      li("④ 반사성 조정", "Δ = " + jo(r.V) + " − 베이스 " + jo(B.total) + " = " + jo(D) + " → 적정 = " + jo(B.total) + " + " + nf2.format(c.m) + "×(" + jo(D) + ") = <b>" + jo(r.adj) + "조</b> · 극단 = ×(1+" + nf0.format(c.k * 100) + "%) → " + jo(r.ext) + "조") +
-      li("⑤ 코스피 환산", jo(r.adj) + "조 × (" + nf2.format(num(state.market.refIndex)) + " ÷ " + nf0.format(num(state.market.refCap)) + "조) = " + jo(r.adj) + " × " + rt.toFixed(4) + " = <b>" + ix(r.adj) + "pt</b> · 현재 " + nf2.format(num(state.market.index)) + "pt 대비 " + pct(r.adj / c.MC - 1)) +
+      li("④ 코스피 환산 = 적정가", jo(r.V) + "조 × (" + nf2.format(num(state.market.refIndex)) + " ÷ " + nf0.format(num(state.market.refCap)) + "조) = " + jo(r.V) + " × " + rt.toFixed(4) + " = <b>" + ix(r.V) + "pt</b> · 현재 " + nf2.format(num(state.market.index)) + "pt 대비 " + pct(r.V / c.MC - 1)) +
+      li("⑤ 재귀적 모델 발동 (현실성은 낮지만 시장이 이런 공포·환희에 빠져든다면?)", "Δ = " + jo(r.V) + " − 베이스 " + jo(B.total) + " = " + jo(D) + " → " + jo(B.total) + " + " + nf2.format(c.m) + " × (" + jo(D) + ") × (1+" + nf0.format(c.k * 100) + "%) = " + jo(r.ext) + "조 = <b>" + ix(r.ext) + "pt</b> (" + pct(r.ext / c.MC - 1) + ")") +
       "</ol></div>";
   }
   function pick(i) {
@@ -868,7 +869,7 @@ code.f b { color: var(--ink); }
     var t = e.target.getAttribute && e.target.getAttribute("data-tip");
     if (t == null) { tip.hidden = true; return; }
     var r = chartEl.__rows[+t], c = chartEl.__c;
-    tip.innerHTML = esc(r.x.name) + " · 확률 " + nf0.format(r.p) + "%<br>DCF 값 <b>" + ix(r.V) + "</b> (" + jo(r.V) + "조)<br>반사성 적정 <b>" + ix(r.adj) + "</b> (" + jo(r.adj) + "조) " + pct(r.adj / c.MC - 1) + "<br>극단 <b>" + ix(r.ext) + "</b> (" + jo(r.ext) + "조)<br>눌러서 가정 보기";
+    tip.innerHTML = esc(r.x.name) + " · 확률 " + nf0.format(r.p) + "%<br>적정가 (DCF) <b>" + ix(r.V) + "</b> (" + jo(r.V) + "조) " + pct(r.V / c.MC - 1) + "<br>재귀 발동 <b>" + ix(r.ext) + "</b> (" + jo(r.ext) + "조)<br>눌러서 가정 보기";
     tip.hidden = false;
     tip.style.left = Math.min(e.clientX + 14, window.innerWidth - tip.offsetWidth - 8) + "px"; tip.style.top = (e.clientY + 14) + "px";
   });
